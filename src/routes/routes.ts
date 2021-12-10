@@ -2,11 +2,11 @@ import { Router } from 'express';
 
 import productsRoutes from './api/products';
 
-import ProductController from '../controllers/Providers/ProductController';
-import ProviderController from '../controllers/Providers/ProviderController';
 import authRouter from './api/auth';
 import usersRouter from './api/users';
 import categoriesRoutes from './api/categories';
+import freightRouter from './api/freight';
+import providersRouter from './api/providers';
 
 const mainRouter = Router();
 
@@ -16,7 +16,7 @@ mainRouter.use(categoriesRoutes)
 mainRouter.use(authRouter)
 mainRouter.use(usersRouter)
 
-mainRouter.get('/providers/list', ProviderController.getProviders)
-mainRouter.get('/providers/convert-luper', ProductController.getLuperProducts)
+mainRouter.use(providersRouter)
+mainRouter.use(freightRouter)
 
 export default mainRouter;

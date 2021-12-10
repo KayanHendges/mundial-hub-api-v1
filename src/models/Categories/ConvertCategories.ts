@@ -3,7 +3,7 @@ import Connect from "../../database/Connect"
 
 class ConvertCategories {
 
-    async hubMainCategoryToTray(id: any, store: string): Promise<any>{
+    async hubMainCategoryToTray(id: any, store: any): Promise<any>{
         return new Promise(async(resolve) => {
 
             if(parseInt(store) == 668385){
@@ -40,7 +40,7 @@ class ConvertCategories {
         })
     }
 
-    async trayMainCategoryToHub(id: any, store: string): Promise<any>{
+    async trayMainCategoryToHub(id: any, store: any): Promise<any>{
         return new Promise(async(resolve) => {
             
             const sql = sqlStore()

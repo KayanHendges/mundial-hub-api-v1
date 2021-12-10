@@ -1,8 +1,11 @@
 import axios from "axios"
+import { format, parseISO } from "date-fns"
 import { Response } from "express"
 import Connect from "../../database/Connect"
+import Datetime from "../../services/datetime"
 import OAuth2Tray from "../Auth/OAuth2Tray"
 import Requests from "../Tray/Requests"
+import ConvertCategories from "../Categories/ConvertCategories"
 
 
 class Products {
@@ -203,6 +206,1391 @@ class Products {
         }
     }
 
+    async create(values: any, res: Response){
+
+        const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
+        const ScPneusCredentials = await OAuth2Tray.getStoreCredentials(1049898)
+
+        const unitary = await validateUnitary(values.unitary)
+        const kit2 = await validateKit(values.unitary, values.kit2, 2)
+        const kit4 = await validateKit(values.unitary, values.kit4, 4)
+
+        const unitaryMundial = await postTrayUnitary(unitary.product, unitary.pricing.mundial, MundialCredentials)
+        const unitaryScPneus = await postTrayUnitary(unitary.product, unitary.pricing.scpneus, ScPneusCredentials)
+        const unitaryDB = unitaryMundial.success && unitaryScPneus.success ? await saveUnitaryDB(unitary) : res.status(400).json({
+            code: 400,
+            message: 'erro ao salvar unitário e/ou precificação no banco de dados'
+        })
+
+        const kit2Mundial = kit2 == false ? false : await postTrayKit(kit2.kit, kit2.pricing.mundial, kit2.rules, 2)
+        const kit4Mundial = kit4 == false ? false : await postTrayKit(kit4.kit, kit4.pricing.mundial, kit4.rules, 4)
+        
+        res.status(201).json({
+            code: 200,
+            message: 'produto salvo com sucesso'
+        })
+
+        async function validateUnitary(unitary: any): Promise<any>{
+
+            const object = {
+                product: {
+                    is_kit: 0,
+                    ean: unitary.ean,
+                    ncm: unitary.ncm,
+                    product_name: unitary.name,
+                    product_description: unitary.description,
+                    brand: unitary.brand,
+                    model: unitary.model,
+                    weight: parseInt(unitary.weight),
+                    length: parseInt(unitary.length),
+                    width: parseInt(unitary.width),
+                    height: parseInt(unitary.height),
+                    main_category_id: unitary.mainCategoryId,
+                    related_categories: unitary.related_categories.length > 0 ? unitary.related_categories.join() : '',
+                    available: 1,
+                    release_date: '',
+                    availability: unitary.availability,
+                    availability_days: parseInt(unitary.availabilityDays),
+                    reference: unitary.reference,
+                    picture_source_1: unitary.images[0].imageUrl,
+                    picture_source_2: unitary.images[1].imageUrl,
+                    picture_source_3: unitary.images[2].imageUrl,
+                    picture_source_4: unitary.images[3].imageUrl,
+                    picture_source_5: unitary.images[4].imageUrl,
+                    picture_source_6: unitary.images[5].imageUrl,
+                    type: 'description',
+                    content: unitary.name,
+                    virtual_product: '',
+                    creation_date: await Datetime(),
+                    modified: await Datetime(),
+                    comments: unitary.comments
+                },
+                pricing: {
+                    mundial: {
+                        is_kit: 0,
+                        cost_price: parseFloat(unitary.pricing.mundial.cost.replace(',', '.')),
+                        profit: typeof(unitary.pricing.mundial.profit) == "string" ? parseFloat(unitary.pricing.mundial.profit.replace(',', '.')) : unitary.pricing.mundial.profit,
+                        tray_price: parseFloat(unitary.pricing.mundial.price.replace(',', '.')),
+                        tray_promotional_price: parseFloat(unitary.pricing.mundial.promotionalPrice.replace(',', '.')),
+                        start_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.mundial.stock),
+                        tray_minimum_stock: 1,
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 668385),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(unitary.related_categories, 668385)).join() : '',
+                        modified: await Datetime()
+                    },
+                    scpneus: {
+                        is_kit: 0,
+                        cost_price: parseFloat(unitary.pricing.scpneus.cost.replace(',', '.')),
+                        profit: typeof(unitary.pricing.scpneus.profit) == "string" ? parseFloat(unitary.pricing.scpneus.profit.replace(',', '.')) : unitary.pricing.scpneus.profit,
+                        tray_price: parseFloat(unitary.pricing.scpneus.price.replace(',', '.')),
+                        tray_promotional_price: parseFloat(unitary.pricing.scpneus.promotionalPrice.replace(',', '.')),
+                        start_promotion: unitary.pricing.scpneus.startPromotion.length > 0 ? format(parseISO(unitary.pricing.scpneus.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.scpneus.startPromotion.length > 0 ? format(parseISO(unitary.pricing.scpneus.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.scpneus.stock),
+                        tray_minimum_stock: 1,
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 1049898),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(unitary.related_categories, 1049898)).join() : '',
+                        modified: await Datetime()
+                    }
+                }, 
+            }
+
+            return object
+        }
+
+        async function validateKit(unitary: any, kit: any, quantity: any): Promise<any>{
+
+            function kitPrice(price: any, priceRule: any, discountType: any, discountValue: any){
+                if(price == 0){
+                    return price
+                }
+                if(parseInt(priceRule) == 1) {
+                    return price
+                }
+                if(parseInt(priceRule) == 2) {
+                    if(discountType == '$'){
+                        return price-discountValue
+                    }
+                    if(discountType == '%'){
+                        return price-(price*discountValue/100)
+                    }
+                }
+            }
+
+            const relatedCategories = unitary.related_categories 
+            relatedCategories.push(520)
+            relatedCategories.push(quantity == 2 ? 581 : 540)
+
+            const object = {
+                kit: {
+                    is_kit: 1,
+                    ean: unitary.ean,
+                    ncm: unitary.ncm,
+                    product_name: kit.name,
+                    product_description: kit.description,
+                    brand: unitary.brand,
+                    model: unitary.model,
+                    weight: parseInt(unitary.weight),
+                    length: parseInt(unitary.length)*quantity,
+                    width: parseInt(unitary.width),
+                    height: parseInt(unitary.height)*quantity,
+                    main_category_id: unitary.mainCategoryId,
+                    related_categories: unitary.related_categories.length > 0 ? unitary.related_categories.join() : '',
+                    availability: unitary.availability,
+                    availability_days: parseInt(unitary.availabilityDays),
+                    reference: unitary.reference,
+                    picture_source_1: kit.images[0].imageUrl,
+                    picture_source_2: kit.images[1].imageUrl,
+                    picture_source_3: kit.images[2].imageUrl,
+                    picture_source_4: kit.images[3].imageUrl,
+                    picture_source_5: kit.images[4].imageUrl,
+                    picture_source_6: kit.images[5].imageUrl,
+                    release_date: '',
+                    type: 'description',
+                    content: kit.name,
+                    virtual_product: '',
+                    modified: await Datetime(),
+                    creation_date: await Datetime(),
+                    comments: unitary.comments
+                },
+                pricing: {
+                    mundial: {
+                        modified: await Datetime(),
+                        is_kit: 1,
+                        cost_price: parseFloat(unitary.pricing.mundial.cost.replace(',', '.'))*quantity,
+                        profit: (typeof(unitary.pricing.mundial.profit) == "string" ? parseFloat(unitary.pricing.mundial.profit.replace(',', '.')) : unitary.pricing.mundial.profit),
+                        tray_price: kitPrice(
+                            parseFloat(unitary.pricing.mundial.price.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ),
+                        tray_promotional_price: unitary.pricing.mundial.promotionalPrice.length > 0 ? kitPrice(
+                            parseFloat(unitary.pricing.mundial.promotionalPrice.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ) : '',
+                        start_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.mundial.stock) == 0 ? 0 : Math.floor(parseInt(unitary.pricing.mundial.stock)/quantity),
+                        tray_minimum_stock: 1,
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 668385),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(relatedCategories, 668385)).join() : ''
+                    },
+                },
+                rules: {
+                    quantity: quantity,
+                    discount_type: kit.rules.discountType,
+                    discount_value: typeof(kit.rules.discountValue) == 'string' ? parseFloat(kit.rules.discountValue.replace(',', '.')) : parseFloat(kit.rules.discountValue) ,
+                    price_rule: kit.rules.priceRule,
+                    modified: await Datetime(),
+                    creation_date: await Datetime(),
+                }
+            }
+
+            return object
+        }
+
+        async function postTrayUnitary(product: any, pricing: any, store: any): Promise<any>{
+            return new Promise(async(resolve, reject) => {
+
+                const productObj = {
+                    Product: {
+                        is_kit: 0,
+                        ean: product.ean,
+                        name: product.product_name,
+                        ncm: product.ncm,
+                        description: product.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        promotional_price: pricing.tray_promotional_price,
+                        start_promotion: pricing.start_promotion,
+                        end_promotion: pricing.end_promotion,
+                        brand:product.brand,
+                        model:product.model,
+                        weight: product.weight,
+                        length: product.length,
+                        width: product.width,
+                        height: product.height,
+                        stock: pricing.tray_stock,
+                        minimum_stock: pricing.tray_minimum_stock,
+                        minimum_stock_alert: '1',
+                        category_id: pricing.tray_main_category_id,
+                        available: product.available,
+                        availability: product.availability,
+                        availability_days: product.availability_days,
+                        reference: product.reference,
+                        hot: "1",
+                        release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        picture_source_1: product.picture_source_1,
+                        picture_source_2: product.picture_source_2,
+                        picture_source_3: product.picture_source_3,
+                        picture_source_4: product.picture_source_4,
+                        picture_source_5: product.picture_source_5,
+                        picture_source_6: product.picture_source_6,
+                        metatag:[{type: "description",
+                        content: product.product_name,
+                        local:1}],
+                        // virtual_product: product.virtual_product
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${store.api_address}/products/?access_token=${store.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve({
+                            success: true,
+                            id: response.data.id
+                        })
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao criar unitário na Tray ${store.tray_adm_user}, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveUnitaryDB(product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `INSERT INTO produtos SET ?`
+
+                Connect.query(sql, product.product, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao salvar unitário no banco de dados'
+                        })
+                    } else {
+                        const hubId = resultado.insertId
+                        resolve(saveUnitaryPricingDB(product, product.pricing.mundial, MundialCredentials, hubId, unitaryMundial.id))
+                    }
+                })
+            })
+        }
+
+        async function saveUnitaryPricingDB(product: any, pricing: any, store: any, hubId: any, trayId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const pricingSql = {
+                    ...pricing,
+                    tray_store_id: store.store,
+                    tray_adm_user: store.tray_adm_user,
+                    hub_id: hubId,
+                    tray_product_id: trayId
+                }
+
+                const sql = `INSERT INTO tray_produtos SET ?` 
+                
+                Connect.query(sql, pricingSql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar a precificação do unitário com tray_product_id=${trayId}`
+                        })
+                    } else {
+                        if (store.store == 668385){
+                            resolve(saveUnitaryPricingDB(product, product.pricing.scpneus, ScPneusCredentials, hubId, unitaryScPneus.id))
+                        }
+                        if (store.store == 1049898) {
+                            resolve({success: true})
+                        }
+                    }
+                })
+            })
+        }
+
+        async function postTrayKit(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const productObj = {
+                    Product: {
+                        is_kit: 1,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        // promotional_price: pricing.tray_promotional_price,
+                        // start_promotion: pricing.start_promotion,
+                        // end_promotion: pricing.end_promotion,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        // stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        available: 1,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        hot: "1",
+                        release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        release_date: "",
+                        picture_source_1: kit.picture_source_1,
+                        picture_source_2: kit.picture_source_2,
+                        picture_source_3: kit.picture_source_3,
+                        picture_source_4: kit.picture_source_4,
+                        picture_source_5: kit.picture_source_5,
+                        picture_source_6: kit.picture_source_6,
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                        // virtual_product: kit.virtual_product
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${MundialCredentials.api_address}/products/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveKitDB(kit, pricing, rules, response.data.id))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao criar kit Tray mundial, causas: ${JSON.stringify(erro.response.data.causes)}`
+                    })
+                })
+            })
+        }
+
+        async function saveKitDB(kit: any, pricing: any, rules: any, trayId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `INSERT INTO produtos SET ?`
+
+                Connect.query(sql, kit, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o kit no banco de dados`
+                        })
+                    } else {
+                        const hubId = resultado.insertId
+                        resolve(saveKitPricingDB(kit, pricing, rules, hubId, trayId))
+                    }
+                })
+            })
+        }
+
+        async function saveKitPricingDB(kit: any, pricing: any, rules: any, hubId: any, trayId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `INSERT INTO tray_produtos SET ?`
+
+                const pricingSql = {
+                    ...pricing,
+                    tray_store_id: MundialCredentials.store,
+                    tray_adm_user: MundialCredentials.tray_adm_user,
+                    hub_id: hubId,
+                    tray_product_id: trayId,
+                }
+
+                Connect.query(sql, pricingSql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        const trayPricingId = resultado.insertId
+                        resolve(postTrayRules(kit, pricing, rules, hubId, trayId, trayPricingId))
+                    }
+                })
+            })
+        }
+
+        async function postTrayRules(kit: any, pricing: any, rules: any, hubId: any, trayId: any, trayPricingId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const rulesObj = JSON.stringify([{
+                    product_parent_id: trayId,
+                    product_id: unitaryMundial.id,
+                    quantity: rules.quantity,
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: parseInt(rules.price_rule)
+                }])
+
+                const query = `${MundialCredentials.api_address}/products/kits/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: rulesObj
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveRulesDB(kit, pricing, rules, hubId, trayId, trayPricingId, response.data.id))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar regras do kit Id Tray ${pricing.tray_product_id} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveRulesDB(kit: any, pricing: any, rules: any, hubId: any, trayId: any, trayPricingId: any, trayRuleId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const ruleDB = {
+                    tray_rule_id: trayRuleId,
+                    tray_pricing_id: trayPricingId,
+                    tray_product_id: unitaryMundial.id,
+                    tray_product_parent_id: trayId,
+                    hub_id: hubId,
+                    quantity: rules.quantity,
+                    kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: rules.price_rule,
+                    modified: await Datetime(),
+                    creation_date: await Datetime()
+                }
+
+                const sql = `INSERT INTO produtos_kits SET ?`
+
+                Connect.query(sql, ruleDB, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit ${kit.quantity} no banco de dados`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+    }
+
+    async createKits(values: any, res: Response){
+
+        const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
+        const kit = await (validateKit(values.unitary, values.kit, values.quantity))
+
+        const kitTray = await postTrayKit(kit.kit, kit.pricing.mundial, kit.rules, values.quantity)
+
+        if(kitTray.success){
+            res.status(201).json({
+                code: 201,
+                message: `kit ${values.quantity} criado com sucesso`
+            })
+        } else {
+            res.status(400).json({
+                code: 400,
+                message: `erro ao criar kit ${values.quantity}`
+            })
+        }
+        
+        async function validateKit(unitary: any, kit: any, quantity: any): Promise<any>{
+
+            function kitPrice(price: any, priceRule: any, discountType: any, discountValue: any): any{
+                if(price == 0){
+                    return price
+                }
+                if(parseInt(priceRule) == 1) {
+                    return price
+                }
+                if(parseInt(priceRule) == 2) {
+                    if(discountType == '$'){
+                        return price-discountValue
+                    }
+                    if(discountType == '%'){
+                        return price-(price*discountValue/100)
+                    }
+                }
+            }
+
+            const relatedCategories = unitary.related_categories 
+            relatedCategories.push(520)
+            relatedCategories.push(quantity == 2 ? 581 : 540)
+
+            const object = {
+                kit: {
+                    is_kit: 1,
+                    ean: unitary.ean,
+                    ncm: unitary.ncm,
+                    product_name: kit.name,
+                    product_description: kit.description,
+                    brand: unitary.brand,
+                    model: unitary.model,
+                    weight: parseInt(unitary.weight),
+                    length: parseInt(unitary.length)*quantity,
+                    width: parseInt(unitary.width),
+                    height: parseInt(unitary.height)*quantity,
+                    main_category_id: unitary.mainCategoryId,
+                    related_categories: unitary.related_categories.length > 0 ? unitary.related_categories.join() : '',
+                    availability: unitary.availability,
+                    availability_days: parseInt(unitary.availabilityDays),
+                    reference: unitary.reference,
+                    picture_source_1: kit.images[0].imageUrl,
+                    picture_source_2: kit.images[1].imageUrl,
+                    picture_source_3: kit.images[2].imageUrl,
+                    picture_source_4: kit.images[3].imageUrl,
+                    picture_source_5: kit.images[4].imageUrl,
+                    picture_source_6: kit.images[5].imageUrl,
+                    release_date: '',
+                    type: 'description',
+                    content: kit.name,
+                    virtual_product: '',
+                    modified: await Datetime(),
+                    creation_date: await Datetime(),
+                    comments: unitary.comments
+                },
+                pricing: {
+                    mundial: {
+                        modified: await Datetime(),
+                        is_kit: 1,
+                        cost_price: parseFloat(unitary.pricing.mundial.cost.replace(',', '.'))*quantity,
+                        profit: (typeof(unitary.pricing.mundial.profit) == "string" ? parseFloat(unitary.pricing.mundial.profit.replace(',', '.')) : unitary.pricing.mundial.profit),
+                        tray_price: kitPrice(
+                            parseFloat(unitary.pricing.mundial.price.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ),
+                        tray_promotional_price: unitary.pricing.mundial.promotionalPrice.length > 0 ? kitPrice(
+                            parseFloat(unitary.pricing.mundial.promotionalPrice.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ) : '',
+                        start_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.mundial.stock) == 0 ? 0 : Math.floor(parseInt(unitary.pricing.mundial.stock)/quantity),
+                        tray_minimum_stock: 1,
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 668385),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(relatedCategories, 668385)).join() : ''
+                    },
+                },
+                rules: {
+                    quantity: quantity,
+                    discount_type: kit.rules.discountType,
+                    discount_value: typeof(kit.rules.discountValue) == 'string' ? parseFloat(kit.rules.discountValue.replace(',', '.')) : parseFloat(kit.rules.discountValue) ,
+                    price_rule: kit.rules.priceRule,
+                    modified: await Datetime(),
+                    creation_date: await Datetime(),
+                }
+            }
+
+            return object
+        }
+
+        async function postTrayKit(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const productObj = {
+                    Product: {
+                        is_kit: 1,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        // promotional_price: pricing.tray_promotional_price,
+                        // start_promotion: pricing.start_promotion,
+                        // end_promotion: pricing.end_promotion,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        // stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        available: 1,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        hot: "1",
+                        release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        release_date: "",
+                        picture_source_1: kit.picture_source_1,
+                        picture_source_2: kit.picture_source_2,
+                        picture_source_3: kit.picture_source_3,
+                        picture_source_4: kit.picture_source_4,
+                        picture_source_5: kit.picture_source_5,
+                        picture_source_6: kit.picture_source_6,
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                        // virtual_product: kit.virtual_product
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${MundialCredentials.api_address}/products/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveKitDB(kit, pricing, rules, response.data.id))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao criar kit Tray mundial, causas: ${JSON.stringify(erro.response.data.causes)}`
+                    })
+                })
+            })
+        }
+
+        async function saveKitDB(kit: any, pricing: any, rules: any, trayId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `INSERT INTO produtos SET ?`
+
+                Connect.query(sql, kit, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o kit no banco de dados`
+                        })
+                    } else {
+                        const hubId = resultado.insertId
+                        resolve(saveKitPricingDB(kit, pricing, rules, hubId, trayId))
+                    }
+                })
+            })
+        }
+
+        async function saveKitPricingDB(kit: any, pricing: any, rules: any, hubId: any, trayId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `INSERT INTO tray_produtos SET ?`
+
+                const pricingSql = {
+                    ...pricing,
+                    tray_store_id: MundialCredentials.store,
+                    tray_adm_user: MundialCredentials.tray_adm_user,
+                    hub_id: hubId,
+                    tray_product_id: trayId,
+                }
+
+                Connect.query(sql, pricingSql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        const trayPricingId = resultado.insertId
+                        resolve(postTrayRules(kit, pricing, rules, hubId, trayId, trayPricingId))
+                    }
+                })
+            })
+        }
+
+        async function postTrayRules(kit: any, pricing: any, rules: any, hubId: any, trayId: any, trayPricingId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const rulesObj = JSON.stringify([{
+                    product_parent_id: trayId,
+                    product_id: values.unitary.pricing.mundial.tray_id,
+                    quantity: rules.quantity,
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: parseInt(rules.price_rule)
+                }])
+
+                const query = `${MundialCredentials.api_address}/products/kits/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: rulesObj
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveRulesDB(kit, pricing, rules, hubId, trayId, trayPricingId, response.data.id))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar regras do kit Id Tray ${trayId} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveRulesDB(kit: any, pricing: any, rules: any, hubId: any, trayId: any, trayPricingId: any, trayRuleId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const ruleDB = {
+                    tray_rule_id: trayRuleId,
+                    tray_pricing_id: trayPricingId,
+                    tray_product_id: values.unitary.pricing.mundial.tray_id,
+                    tray_product_parent_id: trayId,
+                    hub_id: hubId,
+                    quantity: rules.quantity,
+                    kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: rules.price_rule,
+                    modified: await Datetime(),
+                    creation_date: await Datetime()
+                }
+
+                const sql = `INSERT INTO produtos_kits SET ?`
+
+                Connect.query(sql, ruleDB, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit ${kit.quantity} no banco de dados`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+    }
+
+    async edit(values: any, res: Response){
+
+        const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
+        const ScPneusCredentials = await OAuth2Tray.getStoreCredentials(1049898)
+
+        const unitary = await validateUnitary(values.unitary)
+        const kit2 = values.kit2.trayId != 0 ? await validateKit(values.unitary, values.kit2, 2) : false
+        const kit4 = values.kit4.trayId != 0 ? await validateKit(values.unitary, values.kit4, 4) : false
+
+        const unitaryMundial = await postTrayUnitary(unitary.product, unitary.pricing.mundial, MundialCredentials)
+        const unitaryScPneus = await postTrayUnitary(unitary.product, unitary.pricing.scpneus, ScPneusCredentials)
+        const unitaryDB = unitaryMundial.success && unitaryScPneus.success ? await saveUnitaryDB(unitary) : res.status(400).json({
+            code: 400,
+            message: 'erro ao salvar unitário e/ou precificação no banco de dados'
+        })
+
+        const kit2Mundial = kit2 == false ? false : await postTrayKit(kit2.kit, kit2.pricing.mundial, kit2.rules, 2)
+        const kit4Mundial = kit4 == false ? false : await postTrayKit(kit4.kit, kit4.pricing.mundial, kit4.rules, 4)
+        
+        res.status(200).json({
+            code: 200,
+            message: 'produto salvo com sucesso'
+        })
+
+        async function validateUnitary(unitary: any): Promise<any>{
+
+            
+            const object = {
+                product: {
+                    hub_id: unitary.hubId,
+                    ean: unitary.ean,
+                    ncm: unitary.ncm,
+                    product_name: unitary.name,
+                    product_description: unitary.description,
+                    brand: unitary.brand,
+                    model: unitary.model,
+                    weight: unitary.weight,
+                    length: unitary.length,
+                    width: unitary.width,
+                    height: unitary.height,
+                    main_category_id: unitary.mainCategoryId,
+                    related_categories: unitary.related_categories.length > 0 ? unitary.related_categories.join() : '',
+                    availability: unitary.availability,
+                    availability_days: parseInt(unitary.availabilityDays),
+                    reference: unitary.reference,
+                    picture_source_1: unitary.images[0].imageUrl,
+                    picture_source_2: unitary.images[1].imageUrl,
+                    picture_source_3: unitary.images[2].imageUrl,
+                    picture_source_4: unitary.images[3].imageUrl,
+                    picture_source_5: unitary.images[4].imageUrl,
+                    picture_source_6: unitary.images[5].imageUrl,
+                    modified: await Datetime(),
+                    comments: unitary.comments
+                },
+                pricing: {
+                    mundial: {
+                        tray_product_id: unitary.pricing.mundial.tray_id,
+                        cost_price: parseFloat(unitary.pricing.mundial.cost.replace(',', '.')),
+                        profit: typeof(unitary.pricing.mundial.profit) == "string" ? parseFloat(unitary.pricing.mundial.profit.replace(',', '.')) : unitary.pricing.mundial.profit,
+                        tray_price: parseFloat(unitary.pricing.mundial.price.replace(',', '.')),
+                        tray_promotional_price: parseFloat(unitary.pricing.mundial.promotionalPrice.replace(',', '.')),
+                        start_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.mundial.stock),
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 668385),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(unitary.related_categories, 668385)).join() : ''
+                    },
+                    scpneus: {
+                        tray_product_id: unitary.pricing.scpneus.tray_id,
+                        cost_price: parseFloat(unitary.pricing.scpneus.cost.replace(',', '.')),
+                        profit: typeof(unitary.pricing.scpneus.profit) == "string" ? parseFloat(unitary.pricing.scpneus.profit.replace(',', '.')) : unitary.pricing.scpneus.profit,
+                        tray_price: parseFloat(unitary.pricing.scpneus.price.replace(',', '.')),
+                        tray_promotional_price: parseFloat(unitary.pricing.scpneus.promotionalPrice.replace(',', '.')),
+                        start_promotion: unitary.pricing.scpneus.startPromotion.length > 0 ? format(parseISO(unitary.pricing.scpneus.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.scpneus.startPromotion.length > 0 ? format(parseISO(unitary.pricing.scpneus.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.scpneus.stock),
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 1049898),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(unitary.related_categories, 1049898)).join() : ''
+                
+                    }
+                },  
+            }
+
+            return object
+        }
+
+        async function validateKit(unitary: any, kit: any, quantity: any): Promise<any>{
+
+            function kitPrice(price: any, priceRule: any, discountType: any, discountValue: any): any{
+                if(price == 0){
+                    return price
+                }
+                if(parseInt(priceRule) == 1) {
+                    return price
+                }
+                if(parseInt(priceRule) == 2) {
+                    if(discountType == '$'){
+                        return price-discountValue
+                    }
+                    if(discountType == '%'){
+                        return price-(price*discountValue/100)
+                    }
+                }
+            }
+            
+            const relatedCategories = unitary.related_categories 
+            relatedCategories.push(520)
+            relatedCategories.push(quantity == 2 ? 581 : 540)
+
+            const object = {
+                kit: {
+                    hub_id: kit.hubId,
+                    ean: unitary.ean,
+                    ncm: unitary.ncm,
+                    product_name: kit.name,
+                    product_description: kit.description,
+                    brand: unitary.brand,
+                    model: unitary.model,
+                    weight: unitary.weight,
+                    length: parseInt(unitary.length)*quantity,
+                    width: unitary.width,
+                    height: parseInt(unitary.height)*quantity,
+                    main_category_id: quantity == 2 ? 581 : 540,
+                    related_categories: unitary.related_categories.length > 0 ? unitary.related_categories.join() : '',
+                    availability: unitary.availability,
+                    availability_days: parseInt(unitary.availabilityDays),
+                    reference: unitary.reference,
+                    picture_source_1: kit.images[0].imageUrl,
+                    picture_source_2: kit.images[1].imageUrl,
+                    picture_source_3: kit.images[2].imageUrl,
+                    picture_source_4: kit.images[3].imageUrl,
+                    picture_source_5: kit.images[4].imageUrl,
+                    picture_source_6: kit.images[5].imageUrl,
+                    modified: await Datetime(),
+                    comments: unitary.comments
+                },
+                pricing: {
+                    mundial: {
+                        modified: await Datetime(),
+                        tray_product_id: kit.trayId,
+                        cost_price: parseFloat(unitary.pricing.mundial.cost.replace(',', '.'))*quantity,
+                        profit: (typeof(unitary.pricing.mundial.profit) == "string" ? parseFloat(unitary.pricing.mundial.profit.replace(',', '.')) : unitary.pricing.mundial.profit),
+                        tray_price: kitPrice(
+                            parseFloat(unitary.pricing.mundial.price.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ),
+                        tray_promotional_price: unitary.pricing.mundial.promotionalPrice.length > 0 ? kitPrice(
+                            parseFloat(unitary.pricing.mundial.promotionalPrice.replace(',', '.'))*quantity,
+                            kit.rules.priceRule,
+                            kit.rules.discountType,
+                            parseFloat(kit.rules.discountValue.replace(',', '.'))
+                            ) : '',
+                        start_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.startPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        end_promotion: unitary.pricing.mundial.startPromotion.length > 0 ? format(parseISO(unitary.pricing.mundial.endPromotion), 'yyyy-MM-dd 00:00:00' ) : '',
+                        tray_stock: parseInt(unitary.pricing.mundial.stock) == 0 ? 0 : Math.floor(parseInt(unitary.pricing.mundial.stock)/quantity),
+                        tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(unitary.mainCategoryId, 668385),
+                        tray_related_categories: unitary.related_categories.length > 0 ? (await ConvertCategories.hubRelatedCategoriesToTray(relatedCategories, 668385)).join() : ''
+                    },
+                },
+                rules: {
+                    hub_id: kit.hubId,
+                    discount_type: kit.rules.discountType,
+                    discount_value: typeof(kit.rules.discountValue) == 'string' ? parseFloat(kit.rules.discountValue.replace(',', '.')) : parseFloat(kit.rules.discountValue) ,
+                    price_rule: kit.rules.priceRule,
+                }
+            }
+
+            return object
+        }
+
+        async function postTrayUnitary(product: any, pricing: any, store: any): Promise<any>{
+            return new Promise(async(resolve, reject) => {
+
+                const productObjImg = {
+                    Product: {
+                        // is_kit: 0,
+                        ean: product.ean,
+                        name: product.product_name,
+                        ncm: product.ncm,
+                        description: product.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        promotional_price: pricing.tray_promotional_price,
+                        start_promotion: pricing.start_promotion,
+                        end_promotion: pricing.end_promotion,
+                        brand:product.brand,
+                        model:product.model,
+                        weight: product.weight,
+                        length: product.length,
+                        width: product.width,
+                        height: product.height,
+                        stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        // available: product.available,
+                        availability: product.availability,
+                        availability_days: product.availability_days,
+                        reference: product.reference,
+                        // hot: "1",
+                        // release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        picture_source_1: product.picture_source_1,
+                        picture_source_2: product.picture_source_2,
+                        picture_source_3: product.picture_source_3,
+                        picture_source_4: product.picture_source_4,
+                        picture_source_5: product.picture_source_5,
+                        picture_source_6: product.picture_source_6,
+                        metatag:[{type: "description",
+                        content: product.product_name,
+                        local:1}],
+                        minimum_stock_alert: '1',
+                        minimum_stock: 1,
+                        // virtual_product: product.virtual_product
+                    }
+                }
+
+                const productObj = { // no update images
+                    Product: {
+                        // is_kit: 0,
+                        ean: product.ean,
+                        name: product.product_name,
+                        ncm: product.ncm,
+                        description: product.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        promotional_price: pricing.tray_promotional_price,
+                        start_promotion: pricing.start_promotion,
+                        end_promotion: pricing.end_promotion,
+                        brand:product.brand,
+                        model:product.model,
+                        weight: product.weight,
+                        length: product.length,
+                        width: product.width,
+                        height: product.height,
+                        stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        // available: product.available,
+                        availability: product.availability,
+                        availability_days: product.availability_days,
+                        reference: product.reference,
+                        // hot: "1",
+                        // release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        metatag:[{type: "description",
+                        content: product.product_name,
+                        local:1}],
+                        minimum_stock_alert: '1',
+                        minimum_stock: 1,
+                        // virtual_product: product.virtual_product
+                    }
+                }
+
+                const trayProduct = JSON.stringify(values.updateImages ? productObjImg : productObj)
+
+                const query = `${store.api_address}/products/${pricing.tray_product_id}?access_token=${store.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'put',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 200){
+                        resolve({
+                            success: true
+                        })
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao editar produto Id Tray ${pricing.tray_product_id} - ${store.tray_adm_user}, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveUnitaryDB(product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE produtos SET ? WHERE hub_id=${product.product.hub_id}`
+
+                Connect.query(sql, product.product, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao salvar unitário no banco de dados'
+                        })
+                    } else {
+                        resolve(saveUnitaryPricingDB(product, product.pricing.mundial, 668385))
+                    }
+                })
+            })
+        }
+
+        async function saveUnitaryPricingDB(product: any, pricing: any, store: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE tray_produtos SET ? WHERE tray_product_id=${pricing.tray_product_id} AND tray_store_id=${store}` 
+                
+                Connect.query(sql, pricing, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar a precificação do unitário com tray_product_id=${pricing.tray_product_id}`
+                        })
+                    } else {
+                        if (store == 668385){
+                            resolve(saveUnitaryPricingDB(product, product.pricing.scpneus, 1049898))
+                        }
+                        if (store == 1049898) {
+                            resolve({success: true})
+                        }
+                    }
+                })
+            })
+        }
+
+        async function postTrayKit(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const productObjImg = {
+                    Product: {
+                        // is_kit: 0,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        // price: pricing.tray_price,
+                        // cost_price: pricing.cost_price,
+                        // promotional_price: pricing.tray_promotional_price,
+                        // start_promotion: pricing.start_promotion,
+                        // end_promotion: pricing.end_promotion,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        // stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        // available: kit.available,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        // hot: "1",
+                        // release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        picture_source_1: kit.picture_source_1,
+                        picture_source_2: kit.picture_source_2,
+                        picture_source_3: kit.picture_source_3,
+                        picture_source_4: kit.picture_source_4,
+                        picture_source_5: kit.picture_source_5,
+                        picture_source_6: kit.picture_source_6,
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                        // virtual_product: kit.virtual_product
+                    }
+                }
+
+                const productObj = {
+                    Product: {
+                        // is_kit: 0,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        // price: pricing.tray_price,
+                        // cost_price: pricing.cost_price,
+                        // promotional_price: pricing.tray_promotional_price,
+                        // start_promotion: pricing.start_promotion,
+                        // end_promotion: pricing.end_promotion,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        // stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        // available: kit.available,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        // hot: "1",
+                        // release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                        // virtual_product: kit.virtual_product
+                    }
+                }
+
+                const trayProduct = JSON.stringify(values.updateImages ? productObjImg : productObj)
+
+                const query = `${MundialCredentials.api_address}/products/${pricing.tray_product_id}?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'put',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 200){
+                        resolve(saveKitDB(kit, pricing, rules, quantity))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar kit Id Tray ${pricing.tray_product_id} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveKitDB(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `UPDATE produtos SET ? WHERE hub_id=${kit.hub_id}`
+
+                Connect.query(sql, kit, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve(saveKitPricingDB(kit, pricing, rules, quantity))
+                    }
+                })
+            })
+        }
+
+        async function saveKitPricingDB(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE tray_produtos SET ? WHERE tray_product_id=${pricing.tray_product_id} AND tray_store_id=668385`
+
+                Connect.query(sql, pricing, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve(postTrayRules(kit, pricing, rules, quantity))
+                    }
+                })
+            })
+        }
+
+        async function postTrayRules(kit: any, pricing: any, rules: any, quantity: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const rulesObj = JSON.stringify([{
+                    product_parent_id: pricing.tray_product_id,
+                    product_id: unitary.pricing.mundial.tray_product_id,
+                    quantity: quantity,
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: parseInt(rules.price_rule)
+                }])
+
+                const query = `${MundialCredentials.api_address}/products/kits/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: rulesObj
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveRulesDB(kit, pricing, rules))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar regras do kit Id Tray ${pricing.tray_product_id} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveRulesDB(kit: any, pricing: any, rules: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const ruleDB = {
+                    kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: rules.price_rule
+                }
+
+                const sql = `UPDATE produtos_kits SET ? WHERE hub_id=${kit.hub_id}`
+
+                Connect.query(sql, ruleDB, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+    }
+
     async updateImages(reference: number, res: Response){
 
         const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
@@ -395,6 +1783,375 @@ class Products {
         }
     }
 
+    async lastReference(res: Response){
+        const sql = `SELECT reference FROM produtos ORDER BY reference DESC LIMIT 0,1`
+
+        Connect.query(sql, (erro, resultado) => {
+            if(erro){
+                console.log(erro)
+            } else {
+                const lastReference = (parseInt(resultado[0].reference) + 1)
+                res.status(200).json(lastReference.toString())
+            }
+        })
+    }
+
+    async getModelSuggestion(productName: any, res: Response){
+        const splittedName: any[] = productName.toUpperCase().split(" ")
+        const possibleBrand = splittedName[(splittedName.length-1)]
+        var tyreSize = ""
+        var hasTyreSize = false
+        var possibleModel: any
+        var loadIndex = false
+        if(splittedName[0] == "PNEU" || splittedName[0] == "PNEUS"){
+            splittedName.map((word: string, index) => {
+                var darkList = [
+                    "LB", "Lb", "lb", "Letra", "LETRA", "Letras", "LETRAS", "Branca", "BRANCAS"
+                ]
+                var numbers = ["1","2","3","4","5","6","7","8","9","0"]
+                var loadIndexCrts = ["L", "N", "Q", "R", "S", "T", "H", "V", "W", "Y", "Z", "Y"]
+                var sizeCrts = ["/", "R", "-"]
+                var lastLetter = ""
+                word.split('').map((letter, index) => {
+                    if(numbers.indexOf(lastLetter) > -1 && loadIndexCrts.indexOf(letter) > -1 && hasTyreSize){
+                        loadIndex = true
+                    }
+                    if(sizeCrts.indexOf(lastLetter) > -1 && numbers.indexOf(letter) > -1 && !hasTyreSize){
+                        tyreSize = word
+                    }
+                    if(index == (word.length-1)){
+                        lastLetter = ""
+                    } else {
+                        lastLetter = letter
+                    }
+                })
+                if(hasTyreSize && !loadIndex && possibleModel.length < 3 && darkList.indexOf(word) < 0){
+                    possibleModel.push(word)
+                }
+                if(tyreSize.length > 1){
+                    hasTyreSize = true
+                }
+            })
+        }
+    
+        var brand: any = {categoryName: ""}
+        var model: any = {categoryName: ""}
+        var modelParents: any[] = []
+        var vehicleParents: any[] = []
+        var sizeParents: any[] = []
+        var HubRelatedCategories: any[] = []
+
+        if(possibleModel.length > 0){
+            possibleModel = possibleModel.join(" ")
+            model = await getCategory(possibleModel).then(response => {return response})
+            modelParents = await getParents(model.categoryParentId, [model.categoryId]).then(response => {return response})        
+        }
+
+        console.log(tyreSize)
+
+        if(tyreSize.length > 0){
+            const size = await getCategory(tyreSize).then(response => {return response})
+            vehicleParents = await getVehicleParent(size.categoryName).then(response => {return response})
+            sizeParents = await getParents(size.categoryParentId, [size.categoryId]).then(response => {return response})
+        }
+
+        if(possibleBrand.length > 0 && model.categoryName.length > 0){
+            brand = await getCategory(possibleBrand).then(response => {return response})
+        }
+
+        const trayRelatedCategories = [...vehicleParents, ...modelParents, ...sizeParents]
+
+        if(trayRelatedCategories.length){
+            HubRelatedCategories = await getRelatedHubCategories(trayRelatedCategories).then(response => {return response})
+        }
+
+        res.status(200).json({
+            brand: brand.categoryName,
+            model: model.categoryName,
+            relatedCategories: HubRelatedCategories
+        })
+
+        async function getCategory(possibleCategory: string): Promise<any>{
+            return new Promise((resolve, reject) => {
+                if(possibleCategory.length > 0){
+                    const sql = `SELECT * from categorias WHERE category_name LIKE '%${possibleCategory}%'`
+                    Connect.query(sql, (erro, resultado) => {
+                        if(erro){
+                            console.log(erro)
+                        } else {
+                            if(resultado.length > 0){
+                                resolve({
+                                    categoryName: resultado[0].category_name,
+                                    categoryId: resultado[0].tray_category_id,
+                                    categoryParentId: resultado[0].tray_category_parent_id
+                                })
+                            } else {
+                                resolve({
+                                    categoryName: "",
+                                    categoryId: 0,
+                                    categoryParentId: 0,
+                                })
+                            }
+                        }
+                    })
+                } else {
+                    resolve('')
+                }
+            })
+        }
+
+        async function getParents(categoryId: any, relatedCategories: any[]): Promise<any>{
+            return new Promise((resolve, reject) => {
+                console.log(categoryId, relatedCategories)
+                if(categoryId == 0){
+                    resolve([])
+                } else {
+                    const sql = `SELECT * FROM categorias WHERE tray_category_id = ${categoryId}`
+    
+                    Connect.query(sql, (erro, resultado) => {
+                        if(erro){
+                            console.log(erro)
+                        } else {
+                            const related_categories = [...relatedCategories, resultado[0].tray_category_id]
+                            if(resultado[0].tray_category_parent_id > 0){
+                                resolve(getParents(resultado[0].tray_category_parent_id, related_categories))
+                            } else {
+                                resolve(related_categories)
+                            }
+                        }
+                    })
+                }
+            })
+        }
+
+        async function getVehicleParent(size: string): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const sql = `SELECT t.tray_related_categories 
+                FROM produtos p JOIN tray_produtos t ON p.hub_id = t.hub_id
+                WHERE p.product_name LIKE '%${size}%'`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if(erro){
+                        console.log(erro)
+                    } else {
+                        if(resultado.length > 0){
+                            resolve(getCategoryVehicleType(resultado[0].tray_related_categories))
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+            })
+        }
+
+        async function getCategoryVehicleType(productRelatedCategories: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const sql = `SELECT tray_category_id, tray_category_parent_id 
+                FROM categorias 
+                WHERE tray_category_id in (${productRelatedCategories.toString()})`
+
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if(erro){
+                        console.log(erro)
+                    } else {
+                        if(resultado.length > 0){
+                            const categoryId: any[] = []
+                            resultado.map(category => {
+                                if(category.tray_category_parent_id == 1){
+                                    categoryId.push(category.tray_category_id)
+                                }
+                            })
+                            if(categoryId.length > 0){
+                                resolve([1, categoryId[0]])
+                            } else {
+                                resolve([])
+                            }
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+            })
+        }
+
+        async function getRelatedHubCategories(relatedCategories: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                if(relatedCategories.length > 0){
+                    const sql = `SELECT hub_category_id FROM categorias WHERE tray_category_id IN (${relatedCategories}) ORDER BY hub_category_id ASC`
+    
+                    Connect.query(sql, (erro, resultado: any[]) => {
+                        if(erro){
+                            console.log(erro)
+                        } else {
+                            const relatedCategories = resultado.map(id => {
+                                return id.hub_category_id
+                            })
+                            resolve(relatedCategories)
+                        }
+                    })
+                } else {
+                    resolve([])
+                }
+            })
+        }
+    }
+
+    async delete(reference: any, res: Response){
+        const storeCredentials = await OAuth2Tray.getStoreCredentials(668385)
+
+        const unitaryId = await getUnitaryTrayId(reference)
+        const trayKitIds = await getAllProductsReference(reference)
+        
+        const deleteKits = await deleteAllTrayKits(trayKitIds, 1, trayKitIds.length, storeCredentials)
+        .then(response => {
+            if(response.success){
+                return true
+            } else {
+                return false
+            }
+        })
+
+        const deleteUnitary = await deleteUnitaryTray(unitaryId.tray_id, storeCredentials)
+        .then(response => {
+            if(response.success){
+                return deleteDB(reference)
+                .then(response => {
+                    if(response){
+                        return deleteRulesDB(trayKitIds)
+                        .then(response => {
+                            if(response){
+                                return true
+                            } else {
+                                return false
+                            }
+                        })
+                    } else {
+                        return false
+                    }
+                })
+            } else {
+                return false
+            }
+        })
+
+        if(deleteKits && deleteUnitary){
+            res.status(200).json({code: 200})
+        } else {
+            res.status(400).json({code: 400})
+        }
+
+        async function getUnitaryTrayId(reference: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const sql = `SELECT tray_id from produtos where reference=${reference} and is_kit=0`
+                
+                Connect.query(sql, (erro, resultado) => {
+                    if(erro){
+                        console.log(erro)
+                    } else {
+                        resolve(resultado[0])
+                    }
+                })
+            })
+        }
+
+        async function getAllProductsReference(reference: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const sql = `SELECT tray_id from produtos where reference=${reference} and is_kit=1 ORDER BY tray_id DESC`
+                
+                Connect.query(sql, (erro, resultado) => {
+                    if(erro){
+                        console.log(erro)
+                    } else {
+                        resolve(resultado)
+                    }
+                })
+            })
+        }
+
+        async function deleteUnitaryTray(trayId: any, store: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const query = `${store.api_address}/products/${trayId}/?access_token=${store.access_token}`
+                Requests.saveRequest(query)
+
+                axios.delete(query)
+                .then(response => {
+                    if(response.data != undefined){
+                        if(parseInt(response.data.id) == trayId){
+                            resolve({id: response.data.id, success: true})
+                        }
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data)
+                    resolve({success: false})
+                })
+            })
+        }
+
+        async function deleteAllTrayKits(arrayId: any, count: any, length: any, store: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                console.log(count, length)
+                if(count <= length){
+                    const query = `${store.api_address}/products/${arrayId[count-1].tray_id}/?access_token=${store.access_token}`
+                    Requests.saveRequest(query)
+
+                    axios.delete(query)
+                    .then(response => {
+                        console.log(response)
+                        if(response.data != undefined){
+                            if(parseInt(response.data.id) == arrayId[count-1].tray_id){
+                                resolve(deleteAllTrayKits(arrayId, count+1, length, store))
+                            }
+                        } else resolve({success: false})
+                    })
+                    .catch(erro => {
+                        if(erro.response.data.code == 404 || erro.response.data.code == 400){
+                            resolve(deleteAllTrayKits(arrayId, count+1, length, store))
+                        } else {
+                            resolve({success: false})
+                        }
+                    })
+                } else {
+                    resolve({success: true})
+                }
+            })
+        }
+
+        async function deleteDB(reference: any): Promise<any>{
+            return new Promise((resolve, reject) => {
+                const sql = `DELETE from produtos WHERE reference=${reference}`
+            
+                Connect.query(sql, (erro, resultados) => {
+                    if(erro){
+                        console.log(erro)
+                        resolve(false)
+                    } else {
+                        resolve(true)
+                    }
+                })
+            })
+        }
+
+        async function deleteRulesDB(trayKitIds: any[]): Promise<any>{
+            return new Promise((resolve, reject) => {
+
+                const arrayIds = trayKitIds.map(kit => {
+                    return kit.tray_id
+                })
+
+                const sql = `DELETE from produtos_kits WHERE product_parent_id in (${arrayIds})`
+            
+                Connect.query(sql, (erro, resultados) => {
+                    if(erro){
+                        console.log(erro)
+                        resolve(false)
+                    } else {
+                        resolve(true)
+                    }
+                })
+            })
+        }
+    }
 }
 
-export default Products
+export default new Products
