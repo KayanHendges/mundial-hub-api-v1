@@ -23,7 +23,7 @@ export default {
     const {body}: any = req
     
     if(body.category){
-      Categories.createCategory(body.values, res)
+      Categories.createCategory(body.category, res)
     } else {
       res.status(400).json({
         code: 400,
@@ -36,7 +36,7 @@ export default {
     const {body, params}: any = req
     
     if(params.parent_id && body.category){
-      Categories.createSubcategory(body.values, params.parent_id, res)
+      Categories.createSubcategory(body.category, params.parent_id, res)
     } else {
       res.status(400).json({
         code: 400,
