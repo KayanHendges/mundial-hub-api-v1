@@ -1801,7 +1801,7 @@ class Products {
         const possibleBrand = splittedName[(splittedName.length-1)]
         var tyreSize = ""
         var hasTyreSize = false
-        var possibleModel: any
+        var possibleModel: any = []
         var loadIndex = false
         if(splittedName[0] == "PNEU" || splittedName[0] == "PNEUS"){
             splittedName.map((word: string, index) => {
