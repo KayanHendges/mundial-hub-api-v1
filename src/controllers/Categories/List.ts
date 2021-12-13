@@ -5,8 +5,7 @@ export default {
 
   async all(req: Request, res: Response){
 
-    const categories = new Categories
-    categories.listAll(res)
+    Categories.listAll(res)
 
   }
 
