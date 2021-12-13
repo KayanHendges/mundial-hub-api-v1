@@ -5,6 +5,7 @@ import Tables from './database/Tables';
 import cors from "cors"
 import { addHours, format } from 'date-fns';
 import bodyParser from 'body-parser';
+import Routines from './models/Routines/Routines';
 
 const app = express();
 
@@ -26,6 +27,8 @@ Connect.query('SELECT * FROM credenciais_tray', async(erro) => {
         app.use(mainRouter)
 
         app.listen(port, () => console.log(`${time} - Servidor rodando na porta ${port}`))
+
+        Routines.startRoutine()
     }
 })
 

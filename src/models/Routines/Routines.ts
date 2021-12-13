@@ -1,4 +1,5 @@
 import cron from "node-cron"
+import OAuth2Tray from "../Auth/OAuth2Tray";
 import Categories from "../Categories/Categories";
 import Requests from "../Tray/Requests";
 
@@ -10,14 +11,13 @@ class Routines {
             
 
             console.log("rotinas iniciadas")
-            const categories = new Categories
-            const requests = new Requests
-            cron.schedule("0 0 * * *", () => requests.resetCountRequests());
-            cron.schedule("00 03 * * *", () => categories.updateCategoryOrder());
+            OAuth2Tray.tokenRoutine()
+            cron.schedule("0 0 * * *", () => Requests.resetCountRequests());
+            cron.schedule("00 03 * * *", () => Categories.updateCategoryOrder());
 
         })
     }
 
 }
 
-export default Routines
+export default new Routines
