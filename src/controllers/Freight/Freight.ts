@@ -5,7 +5,6 @@ export default {
   
   async freight(req: Request, res: Response) {
 
-    console.log(req)
     const params = req.query
     console.log('================================')
     console.log(params)
