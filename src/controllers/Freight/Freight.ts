@@ -10,8 +10,10 @@ export default {
     console.log(params)
 
     if(params.token != undefined){
+      console.log('passou')
       Freight.freteTray(params, res)
     } else {
+      console.log('está faltando parametros tray')
       res.status(400).json({
         code: 400,
         message: "está faltando parametros"
@@ -20,11 +22,12 @@ export default {
 
     if(params.storeQualifierId != undefined){
           Freight.freteViaVarejo(params, res)
-      } else {
-        res.status(400).json({
-          code: 400,
-          message: "está faltando parametros"
-        })
-      }
-    },
+    } else {
+      console.log('está faltando parametros')
+      res.status(400).json({
+        code: 400,
+        message: "está faltando parametros"
+      })
+    }
+  },
 };
