@@ -1,6 +1,11 @@
 import { Response } from "express";
 import Connect from "../../database/Connect";
 
+interface IProductsList {
+    hubId: number;
+    productName: string;
+}
+
 class ProductsList {
 
     async list(params: any, res: Response){
@@ -173,6 +178,70 @@ class ProductsList {
             })
             return productList
         }
+    }
+
+    async listToLinkProviders(search: string, res: Response){
+
+        var sql = ''
+
+        if(search.length > 0){
+            if(parseInt(search) > 0 && (search).length == 4){ // se for 4, se trata da referencia
+
+                sql = `SELECT hub_id, product_name FROM produtos
+                WHERE reference=${search} AND is_kit=0
+                LIMIT 0, 10`
+
+            } else {
+
+                if(search.split(' ').length > 1){
+
+                    const words = search.split(' ').map(word => {
+                        return `${word}%`
+                    })
+
+                    sql = `SELECT hub_id, product_name FROM produtos
+                    WHERE is_kit=0 AND product_name LIKE '%${words.join('')}'
+                    LIMIT 0, 10`
+
+                } else {
+                    
+                    sql = `SELECT hub_id, product_name FROM produtos
+                    WHERE is_kit=0 AND product_name LIKE '%${search}%' 
+                    LIMIT 0, 10`
+                }
+            }
+        }
+
+        const products = sql.length > 0 ? await getProductList(sql) : []
+        
+        res.status(200).json({
+            code: 200,
+            products: products
+        })
+
+        async function getProductList(sql: string): Promise<IProductsList[]>{
+            return new Promise((resolve, reject) => {
+                Connect.query(sql, (erro, resultados: any[]) => {
+                    if(erro){
+                        console.log(erro)
+                        resolve([])
+                    } else {
+                        if(resultados.length > 0){
+                            const list = resultados.map(result => {
+                                return {
+                                    hubId: parseInt(result.hub_id),
+                                    productName: result.product_name
+                                }
+                            })
+                            resolve(list)
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+            })
+        }
+
     }
 
     async kitsByRef(reference: number, res: Response){

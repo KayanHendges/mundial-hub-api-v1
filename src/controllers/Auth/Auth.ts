@@ -21,7 +21,6 @@ export default {
   async checkToken(req: Request, res: Response){
 
     await ensureAuthenticated(req, res)
-    console.log('logado')
     const {name}:any = req.query        
     
     if (name) {

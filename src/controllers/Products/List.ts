@@ -19,13 +19,27 @@ export default {
 
   },
 
+  async listToLinkProviders(req: Request, res: Response) {
+    
+    const { query }: any  = req
+    if (query.query != undefined) {
+      const productsList = new List
+      productsList.listToLinkProviders(query.query, res)
+    } else {
+      res.status(400).json({
+          code: 400,
+          message: 'é preciso ser enviado parametros para busca'
+      })
+    }
+
+  },
+
   async updateImages(req: Request, res: Response){
     const {params}: any = req
     console.log(params)
 
     if(params.reference){
-      const products = new Products
-      products.updateImages(params.reference, res)
+      Products.updateImages(params.reference, res)
     }
   },
 

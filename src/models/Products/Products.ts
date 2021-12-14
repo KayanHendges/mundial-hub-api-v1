@@ -1599,6 +1599,8 @@ class Products {
         const products = await getProducts(reference)
         const productScPneus = await getProductScPneus(reference)
 
+        console.log('aqui foi')
+
         await productLoop(products, 0)
         await postTraySC(productScPneus)
 

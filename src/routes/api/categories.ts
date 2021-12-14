@@ -9,7 +9,7 @@ const categoriesRoutes = Router();
     
     categoriesRoutes.post('/categories/', Page.createCategory)
     categoriesRoutes.post('/categories/subcategory/:parent_id', Page.createSubcategory)
-    categoriesRoutes.patch('/categories/', Page.createCategory)
+    categoriesRoutes.patch('/categories/', Page.editCategory)
     categoriesRoutes.delete('/categories/:hub_id', Page.deleteCategory)
 
 export default categoriesRoutes;
