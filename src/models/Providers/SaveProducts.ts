@@ -85,10 +85,13 @@ class SaveProducts implements ISaveProducts {
 
                 const productDB = {
                     provider_id: providerId,
+                    hub_id: 0,
                     product_reference: product.productId,
                     product_name: product.productName,
                     product_brand: product.brand,
-                    product_stock: product.stock
+                    product_stock: product.stock,
+                    need_create: 0,
+                    ignore_product: 0,
                 }
 
                 const sql = `INSERT INTO providers_products SET ?`

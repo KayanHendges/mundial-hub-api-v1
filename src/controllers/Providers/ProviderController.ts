@@ -20,14 +20,27 @@ export default {
   },
 
   async productsNotLinked(req: Request, res: Response){
-    const {params}: any = req
+    const {params, query}: any = req
 
-    if(params.provider_id != undefined){
-      Products.getProductsNotLinked(parseInt(params.provider_id), res)
+    if(params.provider_id != undefined && query.param){
+      Products.getProductsNotLinked(parseInt(params.provider_id), query.param, query.search, res)
     } else {
       res.status(400).json({
         code: 400,
         message: 'está faltando o id do fornecedor (provider_id)'
+      })
+    }
+  },
+
+  async handleProductsNotLinked(req: Request, res: Response){
+    const {body}: any = req
+
+    if(body.ids != undefined && body.handleFunction != undefined){
+      Products.handleProductsNotLinked(body.ids, body.handleFunction, res)
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando os Ids ou a função a ser executada'
       })
     }
   }

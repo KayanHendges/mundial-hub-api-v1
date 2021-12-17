@@ -7,8 +7,10 @@ import ProviderController from '../../controllers/Providers/ProviderController';
 const providersRouter = Router();
 
     providersRouter.get('/providers/list', ProviderController.getProviders)
-    providersRouter.get('/providers/link/:provider_id', ProviderController.productsNotLinked)
     providersRouter.get('/providers/convert-luper', ProductController.getLuperProducts)
+    
+    providersRouter.get('/providers/link/:provider_id', ProviderController.productsNotLinked)
     providersRouter.get('/providers/link-products', List.listToLinkProviders)
+    providersRouter.post('/providers/link-products', ProviderController.handleProductsNotLinked)
 
 export default providersRouter;
