@@ -1,7 +1,14 @@
+import { addHours } from "date-fns"
+import { Response } from "express"
 import Connect from "../../database/Connect"
 
 interface IResponse {
     success: boolean
+}
+
+interface IStandartCost {
+    standartCost: number;
+    costType: string;
 }
 
 interface IUpdateProduct {
@@ -9,25 +16,50 @@ interface IUpdateProduct {
     productName: string;
     brand: string;
     stock: number;
+    price: number;
+    additionalCosts: number;
+    lastUpdate: Date;
 }
 
 interface ISaveProducts {
-    saveProductsDB(products: IUpdateProduct[], providerId: number): object
+    saveProductsDB(products: IUpdateProduct[], providerId: number, res: Response): object
 }
 
 class SaveProducts implements ISaveProducts {
-    async saveProductsDB(products: IUpdateProduct[] | any[], providerId: number) {
+    async saveProductsDB(products: IUpdateProduct[] | any[], providerId: number, res: Response): Promise<void>{
 
-        
-        const response = await productLoop(products, 0, providerId)
+        const zeroStock = await setZeroStock(providerId)
+        const standartCosts = await getStandartCost(providerId)
 
-        return response.success
+        if(zeroStock && standartCosts){
+            // const lastUpdate = new Date()
+            const response = await productLoop(products, 0, providerId)
+    
+            if(response.success){
+                res.status(200).json({
+                    code: 200,
+                    message: 'produtos atualizados com sucesso',
+                    products: products
+                })
+            } else {
+                res.status(400).json({
+                    code: 400,
+                    message: 'houve algum erro no processo de atualização do banco de dados',
+                    products: products
+                })
+            }
+        } else {
+            res.status(400).json({
+                code: 400,
+                message: 'erro ao salvar no banco de dados devido a funções anteriores'
+            })
+        }
+
 
         async function productLoop(products: IUpdateProduct[], index: number, providerId: number): Promise<IResponse>{
             return new Promise(async(resolve) => {
                 
                 const updateProduct = await update(products[index], providerId)
-                console.log(updateProduct)
 
                 if(!updateProduct.success){
                     const createProduct = await create(products[index], providerId)
@@ -60,7 +92,10 @@ class SaveProducts implements ISaveProducts {
                 const productDB = {
                     product_name: product.productName,
                     product_brand: product.brand,
-                    product_stock: product.stock
+                    product_stock: product.stock,
+                    product_price: product.price,
+                    additional_costs: product.additionalCosts,
+                    last_update: product.lastUpdate
                 }
 
                 const sql = `UPDATE providers_products SET ? WHERE product_reference=${product.productId} AND provider_id=${providerId}`
@@ -68,8 +103,11 @@ class SaveProducts implements ISaveProducts {
                 Connect.query(sql, productDB, (erro, resultado) => {
                     if(erro){
                         console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao salvar no banco de dados'
+                        })
                     } else {
-                        console.log(product.productId, "atualiazados", resultado.affectedRows)
                         if(resultado.affectedRows > 0){
                             resolve({success: true})
                         } else {
@@ -90,8 +128,11 @@ class SaveProducts implements ISaveProducts {
                     product_name: product.productName,
                     product_brand: product.brand,
                     product_stock: product.stock,
+                    product_price: product.price,
+                    additional_costs: product.additionalCosts,
                     need_create: 0,
                     ignore_product: 0,
+                    last_update: product.lastUpdate
                 }
 
                 const sql = `INSERT INTO providers_products SET ?`
@@ -99,15 +140,57 @@ class SaveProducts implements ISaveProducts {
                 Connect.query(sql, productDB, (erro, resultado) => {
                     if(erro){
                         console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao salvar no banco de dados'
+                        })
                     } else {
-                        console.log(product.productId, "inserido no banco de dados")
                         resolve({success: true})
                     }
                 })                
+            })
+        }
+
+        async function setZeroStock(providerId: number): Promise<boolean>{
+            return new Promise(resolve => {
+                const sql = `UPDATE providers_products SET product_stock = 0 WHERE provider_id = ${providerId}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao zerar o estoques dos produtos vinculados a esse fornecedor'
+                        })
+                    } else {
+                        resolve(true)
+                    }
+                })
+            })
+        }
+
+        async function getStandartCost(providerId: number): Promise<IStandartCost>{
+            return new Promise(resolve => {
+                const sql = `SELECT standart_costs, cost_type FROM providers WHERE provider_id = ${providerId}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao consultar dados do fornecedor'
+                        })
+                    } else {
+                        resolve({
+                            standartCost: resultado[0].standart_costs,
+                            costType: resultado[0].cost_type
+                        })
+                    }
+                })
             })
         }
     }
 
 }
 
-export default SaveProducts
+export default new SaveProducts   
