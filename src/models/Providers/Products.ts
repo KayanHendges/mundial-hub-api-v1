@@ -1,3 +1,4 @@
+import { format } from "date-fns"
 import { Response } from "express"
 import Connect from "../../database/Connect"
 
@@ -19,6 +20,11 @@ interface IProviderProductToList {
     cost: number;
     additionalCost: string;
     totalCost: number;
+}
+
+interface IProviderProductsList {
+    products: IProviderProductToList[]
+    lastUpdate: string;
 }
 
 interface IProviderProducts {
@@ -47,14 +53,15 @@ class Products implements IProviderProducts {
 
         res.status(200).json({
             code: 200,
-            products: products,
-            count: await getCount(providerId, searchName())
+            products: products.products,
+            count: await getCount(providerId, searchName()),
+            lastUpdate: products.lastUpdate
         })
         
-        async function getProducts(providerId: number, search: string): Promise<IProviderProductToList[]>{
+        async function getProducts(providerId: number, search: string): Promise<IProviderProductsList>{
             return new Promise(resolve => {
 
-                const sql = `SELECT pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type
+                const sql = `SELECT pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type, pp.last_update
                 FROM produtos p JOIN providers_products pp ON p.hub_id = pp.hub_id JOIN providers pv on pv.provider_id = pp.provider_id
                 WHERE pp.provider_id = ${providerId} ${search}
                 LIMIT 0, 20`
@@ -80,9 +87,15 @@ class Products implements IProviderProducts {
                                 }
                             })
 
-                            resolve(products)
+                            var lastUpdate = '0000-00-00 00:00:00'
+
+                            if(typeof(resultado[0].last_update) != 'string'){
+                                lastUpdate = format(resultado[0].last_update, 'yyyy-MM-dd hh:mm:ss').toString()
+                            }
+
+                            resolve({products: products, lastUpdate: lastUpdate})
                         } else {
-                            resolve([])
+                            resolve({products: [], lastUpdate: '0000-00-00 00:00:00'})
                         }
                     }
                 })
