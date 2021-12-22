@@ -11,13 +11,141 @@ interface IIds {
     hubId: number;
 }
 
+interface IProviderProductToList {
+    providerReference: number;
+    reference: string;
+    productName: string;
+    stock: number;
+    cost: number;
+    additionalCost: string;
+    totalCost: number;
+}
+
 interface IProviderProducts {
     getProductsNotLinked(providerId: number, param: string, search: string, res: Response): Promise<void>;
     handleProductsNotLinked(ids: IIds, handleFunction: string, res: Response): Promise<void>;
+    listByProviders(providerId: number, search: string, res: Response): void;
 }
 
 class Products implements IProviderProducts {
     
+    async listByProviders(providerId: number, search: string, res: Response){
+
+        const searchName = () => {
+            if(search.length > 0){
+                const words = search.split(' ').map(word => {
+                    return `${word}%`
+                })
+
+                return `AND p.product_name LIKE '%${words.join('')}'`
+            } else {
+                return ''
+            }
+        }
+
+        const products = await getProducts(providerId, searchName())
+
+        res.status(200).json({
+            code: 200,
+            products: products,
+            count: await getCount(providerId, searchName())
+        })
+        
+        async function getProducts(providerId: number, search: string): Promise<IProviderProductToList[]>{
+            return new Promise(resolve => {
+
+                const sql = `SELECT pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type
+                FROM produtos p JOIN providers_products pp ON p.hub_id = pp.hub_id JOIN providers pv on pv.provider_id = pp.provider_id
+                WHERE pp.provider_id = ${providerId} ${search}
+                LIMIT 0, 20`
+
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao se conectar ao banco de dados'
+                        })
+                    } else {
+                        if(resultado.length > 0){
+                            const products = resultado.map(product => {
+                                return {
+                                    providerReference: product.product_reference,
+                                    reference: product.reference,
+                                    productName: product.product_name,
+                                    stock: product.product_stock,
+                                    cost: product.product_price,
+                                    additionalCost: getAdditionalCost(product.standart_costs, product.cost_type),
+                                    totalCost: calcTotalCost(product.product_price, product.standart_costs, product.cost_type)
+                                }
+                            })
+
+                            resolve(products)
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+                
+                function getAdditionalCost(cost: number, costType: string): string{
+                    if(cost == 0){
+                        return ''
+                    }
+                    
+                    if(costType == '$' || costType == '%'){
+                        return `${cost}${costType}`
+                    }
+
+                    return ''
+                }
+
+                function calcTotalCost(price: number, cost: number, costType: string): number{
+                    if(cost == 0){
+                        return price
+                    }
+
+                    if(costType == '$'){
+                        return price + cost
+                    }
+                    
+                    if(costType == '%'){
+                        return parseFloat((price * ((cost/100)+1)).toFixed(2))
+                    }
+
+                    return price
+                }
+            })
+        }
+
+        async function getCount(providerId: number, search: string): Promise<number>{
+            return new Promise(resolve => {
+                
+                const sql = `SELECT count(pp.provider_product_id)
+                FROM produtos p JOIN providers_products pp ON p.hub_id = pp.hub_id JOIN providers pv on pv.provider_id = pp.provider_id
+                WHERE pp.provider_id = ${providerId} ${search}`            
+
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao conectar ao banco de dados'
+                        })
+                    } else {
+                        if(resultado.length > 0){
+                            var productsLength = JSON.stringify(resultado[0])
+                            productsLength = productsLength.replace('{"count(pp.provider_product_id)":', '')
+                            productsLength = productsLength.replace('}', '')
+                            resolve(parseInt(productsLength))
+                        } else {
+                            resolve(0)
+                        }
+                    }
+                })
+            })
+        }
+    }
+
     async getProductsNotLinked(providerId: number, param: string, search: string, res: Response){
 
         const searchName = () => {

@@ -6,7 +6,10 @@ interface IProductsList {
     productName: string;
 }
 
-class ProductsList {
+interface IList {
+}
+
+class List implements IList {
 
     async list(params: any, res: Response){
 
@@ -266,4 +269,4 @@ class ProductsList {
     }
 }
 
-export default ProductsList
+export default new List

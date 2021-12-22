@@ -8,8 +8,7 @@ export default {
     
     const { query }: any  = req
     if (query.search != undefined) {
-      const productsList = new List
-      productsList.list(query, res)
+      List.list(query, res)
     } else {
       res.status(400).json({
           code: 400,
@@ -23,8 +22,7 @@ export default {
     
     const { query }: any  = req
     if (query.query != undefined) {
-      const productsList = new List
-      productsList.listToLinkProviders(query.query, res)
+      List.listToLinkProviders(query.query, res)
     } else {
       res.status(400).json({
           code: 400,
@@ -48,8 +46,7 @@ export default {
     const {params}: any = req
 
     if(params.reference != undefined){
-      const productList = new List
-      productList.kitsByRef(params.reference, res)
+      List.kitsByRef(params.reference, res)
     }
   }
   
