@@ -32,8 +32,10 @@ class SaveProducts implements ISaveProducts {
         const standartCosts = await getStandartCost(providerId)
 
         if(zeroStock && standartCosts){
+            console.log('Estoques zerados')
             // const lastUpdate = new Date()
             const response = await productLoop(products, 0, providerId)
+            console.log('fim da operação')
     
             if(response.success){
                 res.status(200).json({
@@ -65,6 +67,7 @@ class SaveProducts implements ISaveProducts {
                     const createProduct = await create(products[index], providerId)
 
                     if(createProduct.success){
+                        console.log(index+1, " / ", products.length, ' - inserido com sucesso')
                         if(products.length > index+1){
                             resolve(productLoop(products, index+1, providerId))
                         } else {
@@ -76,6 +79,7 @@ class SaveProducts implements ISaveProducts {
                     }
 
                 } else {
+                    console.log(index+1, " / ", products.length, ' - update com sucesso')
                     if(products.length > index+1){
                         resolve(productLoop(products, index+1, providerId))
                     } else {

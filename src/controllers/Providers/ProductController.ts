@@ -14,7 +14,12 @@ export default {
 
   async ConvertProductsRoddar(req: Request, res: Response) {
 
-    const products = ConvertProducts.roddarText('roddar_hankook_products.txt')
+    const hankook = ConvertProducts.roddarText('roddar_hankook_products.txt')
+    const laufenn = ConvertProducts.roddarText('roddar_laufenn_products.txt')
+    const imports = ConvertProducts.roddarImportsText('roddar_imports_products.txt')
+    const products = {
+      products: hankook.products.concat(laufenn.products, imports.products)
+    }
 
     await SaveProducts.saveProductsDB(products.products, 3, res)
   },

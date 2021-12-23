@@ -18,6 +18,7 @@ interface IResponseProducts {
 interface IConvertProducts {
   luperText(request: string): IResponseProducts;
   roddarText(file: string): IResponseProducts;
+  roddarImportsText(file: string): IResponseProducts;
 }
 
 class ConvertProducts implements IConvertProducts {
@@ -27,7 +28,7 @@ class ConvertProducts implements IConvertProducts {
     const textProducts = fs.readFileSync(`./src/files/${products}`, 'utf8').split('\n')
 
     const fillText: IProduct[] = [] 
-    const lastUpdate = parseISO(textProducts[0])
+    const lastUpdate = parseISO(textProducts[0].replace('\r', ''))
     
     textProducts.map(line => {
       if(line.includes('PNEU') && line.length > 50){
@@ -63,9 +64,9 @@ class ConvertProducts implements IConvertProducts {
     const textProducts = fs.readFileSync(`./src/files/${file}`, 'utf8').split('\n')
 
     const fillText: IProduct[] = [] 
-    const lastUpdate = parseISO(textProducts[0])
+    const lastUpdate = parseISO(textProducts[0].replace('\r', ''))
 
-    textProducts.map((row, i) => {
+    textProducts.map((row, index) => {
 
       if(row.length > 60){
         const words = row.split(' ')
@@ -85,8 +86,71 @@ class ConvertProducts implements IConvertProducts {
             productName.push(word)
           }
 
+          if(word == "RUNFT\r"){
+            const runflat = word.replace('\r', '')
+            productName.splice(0, 0, runflat)
+          }
+
           if(word == "RUNFT"){
             productName.splice(0, 0, word)
+          }
+        })
+  
+        fillText.push({
+          productId: parseInt(words[0]),
+          productName: productName.join(' '),
+          brand: words[4],
+          stock: 4,
+          price: price,
+          additionalCosts: 0,
+          lastUpdate: lastUpdate
+        })
+      }
+    })
+
+    
+    fillText.map(product => {
+      if(typeof(product.productId) != "number" && product.price < 250){
+        console.log(product)
+      }
+    })
+
+    return {
+      products: fillText
+    }
+
+  }
+
+  roddarImportsText(file: string){
+
+    const textProducts = fs.readFileSync(`./src/files/${file}`, 'utf8').split('\n')
+
+    const fillText: IProduct[] = [] 
+    const lastUpdate = parseISO(textProducts[0].replace('\r', ''))
+
+    textProducts.map((row, index) => {
+
+      if(row.length > 35){
+        const words = row.split(' ')
+
+        const productName: string[] = []
+
+        var startPrice = false
+        var price = 0
+
+        words.map((word, i) => {
+
+          const crts = word.split('')
+
+          crts.map(crt => {
+            if(crt == ','){
+              startPrice = true
+              price = parseFloat(word.replace(',', '.'))
+            }
+          })
+
+          if(i > 0 && !startPrice){
+            productName.push(word)
           }
         })
   
