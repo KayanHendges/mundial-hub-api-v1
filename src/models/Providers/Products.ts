@@ -37,24 +37,14 @@ class Products implements IProviderProducts {
     
     async listByProviders(providerId: number, search: string, res: Response){
 
-        const searchName = () => {
-            if(search.length > 0){
-                const words = search.split(' ').map(word => {
-                    return `${word}%`
-                })
+        const searchQuery = getSearchQuery(search)
 
-                return `AND p.product_name LIKE '%${words.join('')}'`
-            } else {
-                return ''
-            }
-        }
-
-        const products = await getProducts(providerId, searchName())
+        const products = await getProducts(providerId, searchQuery)
 
         res.status(200).json({
             code: 200,
             products: products.products,
-            count: await getCount(providerId, searchName()),
+            count: await getCount(providerId, searchQuery),
             lastUpdate: products.lastUpdate
         })
         
@@ -157,6 +147,31 @@ class Products implements IProviderProducts {
                 })
             })
         }
+
+        function getSearchQuery(search: string){
+
+            var onlyNumber = true
+            
+            search.split('').map(crt => {
+                if(isNaN(parseInt(crt))){
+                    onlyNumber = false
+                }
+            })
+
+            if(search.length == 4 && onlyNumber){
+                return `AND p.reference = ${search}`
+            }
+
+            if(search.length > 0){
+                const words = search.split(' ').map(word => {
+                    return `${word}%`
+                })
+
+                return `AND p.product_name LIKE '%${words.join('')}'`
+            } else {
+                return ''
+            }
+        }
     }
 
     async getProductsNotLinked(providerId: number, param: string, search: string, res: Response){
@@ -189,13 +204,13 @@ class Products implements IProviderProducts {
 
                 if(param == 'link'){
                     sql = `SELECT product_reference, product_name FROM providers_products 
-                    WHERE provider_id=${providerId} AND hub_id=0 AND ignore_product=0 AND need_create=0  ${search}
+                    WHERE provider_id=${providerId} AND hub_id=0 AND ignore_product=0 AND need_create=0 AND product_stock > 0 ${search}
                     ORDER BY product_name ASC LIMIT 0,10`
                 }
 
                 if(param == 'create'){
                     sql = `SELECT product_reference, product_name FROM providers_products 
-                    WHERE provider_id=${providerId} AND hub_id=0 AND ignore_product=0 AND need_create=1 ${search}
+                    WHERE provider_id=${providerId} AND hub_id=0 AND ignore_product=0 AND need_create=1 AND product_stock > 0 ${search}
                     ORDER BY product_name ASC LIMIT 0,10`
                 }                
 
@@ -231,12 +246,12 @@ class Products implements IProviderProducts {
 
                 if(param == "link"){
                     sql = `SELECT count(provider_product_id) FROM providers_products 
-                    WHERE provider_id=${providerId} AND hub_id=0 AND need_create=0 AND ignore_product=0 ${search}`
+                    WHERE provider_id=${providerId} AND hub_id=0 AND need_create=0 AND ignore_product=0 AND product_stock > 0 ${search}`
                 }
 
                 if(param == "create"){
                     sql = `SELECT count(provider_product_id) FROM providers_products 
-                    WHERE provider_id=${providerId} AND hub_id=0 AND need_create=1 AND ignore_product=0 ${search}`
+                    WHERE provider_id=${providerId} AND hub_id=0 AND need_create=1 AND ignore_product=0 AND product_stock > 0 ${search}`
                 }                
 
                 Connect.query(sql, (erro, resultado) => {
