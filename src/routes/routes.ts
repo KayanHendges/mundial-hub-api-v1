@@ -7,6 +7,7 @@ import usersRouter from './api/users';
 import categoriesRoutes from './api/categories';
 import freightRouter from './api/freight';
 import providersRouter from './api/providers';
+import temp from '../models/temp';
 
 const mainRouter = Router();
 
@@ -18,5 +19,9 @@ mainRouter.use(usersRouter)
 
 mainRouter.use(providersRouter)
 mainRouter.use(freightRouter)
+
+mainRouter.get('/updateSizes', (req, res) => {
+    temp.updateSizes(res)
+})
 
 export default mainRouter;
