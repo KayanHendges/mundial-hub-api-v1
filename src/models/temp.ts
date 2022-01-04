@@ -10,7 +10,7 @@ class Temp {
     async updateSizes(res: Response){        
         
         const unitaryList = await getUnitaryList()
-        await productLoop(unitaryList, 0)
+        await productLoop(unitaryList, 1449)
 
         res.send(unitaryList)
 
@@ -33,8 +33,8 @@ class Temp {
         async function productLoop(list: any[], index: number): Promise<void>{
             return new Promise(async(resolve) => {
 
+                console.log(list[index].reference, '-----', index+1, '/', list.length, ' ', ((100/list.length)*(index+1)).toFixed(2), '%')
                 const product = await getKitId(list[index])
-                console.log(list[index].reference, '-----', index+1, '/', list.length)
 
                 if(product.success && product.kit2 != undefined) {
                     await postTrayUnitary(list[index], product.kit2, 2)
@@ -62,12 +62,13 @@ class Temp {
                 const sql = `SELECT t.tray_product_id, p.hub_id
                 FROM produtos p JOIN tray_produtos t ON p.hub_id = t.hub_id
                 WHERE p.is_kit=1 AND t.tray_store_id=668385 AND p.reference=${unitary.reference}
-                ORDER BY t.tray_stock DESC`
+                ORDER BY p.product_name ASC`
 
                 Connect.query(sql, (erro, resultado) => {
                     if (erro) {
                         console.log(erro)
                     } else {
+                        console.log(resultado.length)
                         if(resultado.length == 0){
                             resolve({ success: false })
                         }
@@ -93,6 +94,7 @@ class Temp {
                                 }
                             })
                         }
+                        resolve({ success: false })
                     }
                 })
             })

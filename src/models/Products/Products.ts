@@ -466,6 +466,7 @@ class Products {
                     }
                 })
                 .catch(erro => {
+                    console.log(erro)
                     console.log(erro.response.data.causes)
                     res.status(400).json({
                         code: 400,
@@ -1999,158 +2000,14 @@ class Products {
     }
 
     async delete(reference: any, res: Response){
-        const storeCredentials = await OAuth2Tray.getStoreCredentials(668385)
+        const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
+        const ScPneusCredentials = await OAuth2Tray.getStoreCredentials(1049898)
 
-        const unitaryId = await getUnitaryTrayId(reference)
-        const trayKitIds = await getAllProductsReference(reference)
-        
-        const deleteKits = await deleteAllTrayKits(trayKitIds, 1, trayKitIds.length, storeCredentials)
-        .then(response => {
-            if(response.success){
-                return true
-            } else {
-                return false
-            }
-        })
-
-        const deleteUnitary = await deleteUnitaryTray(unitaryId.tray_id, storeCredentials)
-        .then(response => {
-            if(response.success){
-                return deleteDB(reference)
-                .then(response => {
-                    if(response){
-                        return deleteRulesDB(trayKitIds)
-                        .then(response => {
-                            if(response){
-                                return true
-                            } else {
-                                return false
-                            }
-                        })
-                    } else {
-                        return false
-                    }
-                })
-            } else {
-                return false
-            }
-        })
-
-        if(deleteKits && deleteUnitary){
-            res.status(200).json({code: 200})
-        } else {
-            res.status(400).json({code: 400})
-        }
-
-        async function getUnitaryTrayId(reference: any): Promise<any>{
-            return new Promise((resolve, reject) => {
-                const sql = `SELECT tray_id from produtos where reference=${reference} and is_kit=0`
-                
-                Connect.query(sql, (erro, resultado) => {
-                    if(erro){
-                        console.log(erro)
-                    } else {
-                        resolve(resultado[0])
-                    }
-                })
-            })
-        }
-
-        async function getAllProductsReference(reference: any): Promise<any>{
-            return new Promise((resolve, reject) => {
-                const sql = `SELECT tray_id from produtos where reference=${reference} and is_kit=1 ORDER BY tray_id DESC`
-                
-                Connect.query(sql, (erro, resultado) => {
-                    if(erro){
-                        console.log(erro)
-                    } else {
-                        resolve(resultado)
-                    }
-                })
-            })
-        }
-
-        async function deleteUnitaryTray(trayId: any, store: any): Promise<any>{
-            return new Promise((resolve, reject) => {
-                const query = `${store.api_address}/products/${trayId}/?access_token=${store.access_token}`
-                Requests.saveRequest(query)
-
-                axios.delete(query)
-                .then(response => {
-                    if(response.data != undefined){
-                        if(parseInt(response.data.id) == trayId){
-                            resolve({id: response.data.id, success: true})
-                        }
-                    }
-                })
-                .catch(erro => {
-                    console.log(erro.response.data)
-                    resolve({success: false})
-                })
-            })
-        }
-
-        async function deleteAllTrayKits(arrayId: any, count: any, length: any, store: any): Promise<any>{
-            return new Promise((resolve, reject) => {
-                console.log(count, length)
-                if(count <= length){
-                    const query = `${store.api_address}/products/${arrayId[count-1].tray_id}/?access_token=${store.access_token}`
-                    Requests.saveRequest(query)
-
-                    axios.delete(query)
-                    .then(response => {
-                        console.log(response)
-                        if(response.data != undefined){
-                            if(parseInt(response.data.id) == arrayId[count-1].tray_id){
-                                resolve(deleteAllTrayKits(arrayId, count+1, length, store))
-                            }
-                        } else resolve({success: false})
-                    })
-                    .catch(erro => {
-                        if(erro.response.data.code == 404 || erro.response.data.code == 400){
-                            resolve(deleteAllTrayKits(arrayId, count+1, length, store))
-                        } else {
-                            resolve({success: false})
-                        }
-                    })
-                } else {
-                    resolve({success: true})
-                }
-            })
-        }
-
-        async function deleteDB(reference: any): Promise<any>{
-            return new Promise((resolve, reject) => {
-                const sql = `DELETE from produtos WHERE reference=${reference}`
-            
-                Connect.query(sql, (erro, resultados) => {
-                    if(erro){
-                        console.log(erro)
-                        resolve(false)
-                    } else {
-                        resolve(true)
-                    }
-                })
-            })
-        }
-
-        async function deleteRulesDB(trayKitIds: any[]): Promise<any>{
-            return new Promise((resolve, reject) => {
-
-                const arrayIds = trayKitIds.map(kit => {
-                    return kit.tray_id
-                })
-
-                const sql = `DELETE from produtos_kits WHERE product_parent_id in (${arrayIds})`
-            
-                Connect.query(sql, (erro, resultados) => {
-                    if(erro){
-                        console.log(erro)
-                        resolve(false)
-                    } else {
-                        resolve(true)
-                    }
-                })
+        async function getMundialTrayIds(reference: string){
+            return new Promise(resolve => {
+                const sql = `SELECT 
+                FROM produtos p JOIN tray_produtos
+                WHERE p.reference = ${reference}`
             })
         }
     }

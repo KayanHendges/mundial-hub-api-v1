@@ -20,8 +20,4 @@ mainRouter.use(usersRouter)
 mainRouter.use(providersRouter)
 mainRouter.use(freightRouter)
 
-mainRouter.get('/updateSizes', (req, res) => {
-    temp.updateSizes(res)
-})
-
 export default mainRouter;
