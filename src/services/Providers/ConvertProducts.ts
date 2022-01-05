@@ -1,7 +1,19 @@
 import { parseISO } from 'date-fns'
 import fs from 'fs'
+import Connect from '../../database/Connect'
 
 interface IProduct {
+  productId: number;
+  productName: string;
+  brand: string;
+  stock: number;
+  price: number;
+  additionalCosts: number;
+  lastUpdate: Date;
+}
+
+interface IProductLocal {
+  hubId: number;
   productId: number;
   productName: string;
   brand: string;
@@ -15,13 +27,64 @@ interface IResponseProducts {
   products: IProduct[]
 }
 
+interface IResponseProductsLocal {
+  products: IProductLocal[]
+}
+
 interface IConvertProducts {
+  localStock(): Promise<IResponseProductsLocal>; 
   luperText(request: string): IResponseProducts;
   roddarText(file: string): IResponseProducts;
   roddarImportsText(file: string): IResponseProducts;
 }
 
 class ConvertProducts implements IConvertProducts {
+
+  async localStock(): Promise<IResponseProductsLocal>{
+
+    const products = await getAllProducts()
+
+    return {
+      products: products
+    }
+
+    async function getAllProducts(): Promise<IProductLocal[]>{
+      return new Promise(resolve => {
+        
+        const sql = `SELECT p.hub_id, p.reference, p.product_name, p.brand, t.cost_price
+        FROM produtos p JOIN tray_produtos t ON p.hub_id=t.hub_id WHERE p.is_kit=0 AND t.tray_store_id = 668385 AND p.hub_id != 3838`
+
+        Connect.query(sql, (erro, resultado: any[]) => {
+          if (erro) {
+            console.log(erro)
+          } else {
+            if (resultado.length > 0) {
+              const lastUpdate = new Date()
+
+              const products = resultado.map(product => {
+                return {
+                  hubId: product.hub_id,
+                  productId: product.reference,
+                  productName: product.product_name,
+                  brand: product.brand,
+                  stock: 0,
+                  price: product.cost_price,
+                  additionalCosts: 0,
+                  lastUpdate: lastUpdate,
+                }
+              })
+
+              resolve(products)
+            } else {
+              resolve([])
+            }
+          }
+        })
+
+      })
+    }
+
+  }
   
   luperText(products: string){
 

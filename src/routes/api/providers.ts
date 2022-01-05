@@ -6,6 +6,8 @@ import ProviderController from '../../controllers/Providers/ProviderController';
 const providersRouter = Router();
 
     providersRouter.get('/providers/list', ProviderController.getProviders)
+
+    providersRouter.get('/providers/convert-product/local', ProductController.ConvertProductsLocal)
     providersRouter.get('/providers/convert-product/luper', ProductController.ConvertProductsLuper)
     providersRouter.get('/providers/convert-product/roddar', ProductController.ConvertProductsRoddar)
     

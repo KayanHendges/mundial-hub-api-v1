@@ -5,6 +5,13 @@ import ConvertProducts from '../../services/Providers/ConvertProducts';
 
 export default {
   
+  async ConvertProductsLocal(req: Request, res: Response) {
+    const products = await ConvertProducts.localStock()
+
+    await SaveProducts.saveProductsDBLocal(products.products, 1, res)
+
+  },
+
   async ConvertProductsLuper(req: Request, res: Response) {
     const products = ConvertProducts.luperText('luper_products.txt')
 
