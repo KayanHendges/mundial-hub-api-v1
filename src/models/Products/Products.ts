@@ -7,6 +7,11 @@ import OAuth2Tray from "../Auth/OAuth2Tray"
 import Requests from "../Tray/Requests"
 import ConvertCategories from "../Categories/ConvertCategories"
 
+interface ProductIds {
+    hubId: number;
+    trayId: number;
+    isKit: number;
+}
 
 class Products {
 
@@ -2003,11 +2008,144 @@ class Products {
         const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
         const ScPneusCredentials = await OAuth2Tray.getStoreCredentials(1049898)
 
-        async function getMundialTrayIds(reference: string){
+        const mundialId = await getTrayIds(reference, 668385)
+        const scpneusId = await getTrayIds(reference, 1049898)
+
+        await mundialLoop(mundialId, 0)
+        await deleteTray(scpneusId[0].trayId, ScPneusCredentials)
+
+        await deleteDB(mundialId, 'produtos_kits')
+        await deleteDB(mundialId, 'tray_produtos')
+        await deleteDB(mundialId, 'produtos')
+
+        await unlinkProvidersProducts(mundialId)
+
+        res.status(200).json({
+            code: 200,
+            message: `Produto ${reference} excluído com sucesso`
+        })
+
+        async function getTrayIds(reference: string, store: number): Promise<ProductIds[]>{
             return new Promise(resolve => {
-                const sql = `SELECT 
-                FROM produtos p JOIN tray_produtos
-                WHERE p.reference = ${reference}`
+                const sql = `SELECT p.hub_id, t.tray_product_id, p.is_kit
+                FROM produtos p JOIN tray_produtos t ON p.hub_id=t.hub_id
+                WHERE p.reference = ${reference} AND t.tray_store_id = ${store}
+                ORDER BY p.hub_id DESC`
+            
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao procurar pelo tray_id e hub_id no banco de dados'
+                        })
+                    } else {
+                        if (resultado.length > 0) {
+                            const idList = resultado.map( result => {
+                                return {
+                                    hubId: result.hub_id,
+                                    trayId: result.tray_product_id,
+                                    isKit: result.is_kit
+                                }
+                            })
+
+                            resolve(idList)
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+            })
+        }
+
+        async function mundialLoop(list: ProductIds[], index: number): Promise<void>{
+            return new Promise(async(resolve) => {
+
+                if(list.length > 0 && list.length > index){
+
+                    await deleteTray(list[index].trayId, MundialCredentials)
+
+                    resolve(mundialLoop(list, index+1))
+                } else {
+                    resolve()
+                }
+            })
+        }
+
+        async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
+            return new Promise(resolve => {
+
+                const query = `${storeCredentials.api_address}/products/${trayId}/?access_token=${storeCredentials.access_token}`
+                Requests.saveRequest(query)
+                
+                const config: any = {
+                    method: 'delete',
+                    url: query,
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 200){
+                        resolve()
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${erro.response.data}`
+                    })
+                })
+
+
+            })
+        }
+
+        async function deleteDB(idList: ProductIds[], table: string): Promise<void>{
+            return new Promise(resolve => {
+                
+                const ids = idList.map(id => {
+                    return id.hubId
+                })
+
+                const sql = `DELETE FROM ${table}
+                WHERE hub_id IN (${ids.join(',')})`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao deletar no banco de dados ${table}`
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+        async function unlinkProvidersProducts(idList: ProductIds[]): Promise<void>{
+            return new Promise(resolve => {
+                const ids = idList.map(id => {
+                    return id.hubId
+                })
+    
+                const sql = `UPDATE providers_products SET hub_id = 0 WHERE hub_id IN (${ids.join(',')})`
+    
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao desvincular aos produtos dos fornecedores no banco de dados`
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
             })
         }
     }

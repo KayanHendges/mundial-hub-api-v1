@@ -43,5 +43,5 @@ export default {
         message: 'está faltando os Ids ou a função a ser executada'
       })
     }
-  }
+  },
 };

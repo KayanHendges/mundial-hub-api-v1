@@ -31,6 +31,7 @@ interface IProviderProducts {
     getProductsNotLinked(providerId: number, param: string, search: string, res: Response): Promise<void>;
     handleProductsNotLinked(ids: IIds, handleFunction: string, res: Response): Promise<void>;
     listByProviders(providerId: number, search: string, res: Response): void;
+    editProviderProduct(providerId: number, productId: number, field: string, value: string | number, res: Response): void;
 }
 
 class Products implements IProviderProducts {
@@ -369,6 +370,35 @@ class Products implements IProviderProducts {
         }
     }
 
+    async editProviderProduct(providerId: number, productId: number, field: string, value: string | number, res: Response){
+
+        await updateDB(providerId, productId, field, value)
+
+        res.status(200).json({
+            code: 200,
+            message: 'produto alterado com sucesso'
+        })
+
+        async function updateDB(providerId: number, productId: number, field: string, value: string | number): Promise<void>{
+            return new Promise(resolve => {
+                const sql = `UPDATE providers_products SET ${field} = ${value} 
+                WHERE provider_id = ${providerId} AND product_reference = ${productId}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao atualizar no banco de dados'
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+    }
 }
 
 export default new Products

@@ -31,7 +31,6 @@ export default {
     await SaveProducts.saveProductsDB(products.products, 3, res)
   },
 
-  
   async listProviderProducts(req: Request, res: Response){
 
     const {params, query}: any = req
@@ -46,4 +45,34 @@ export default {
     }
 
   },
+
+  async providerProductsByRef(req: Request, res: Response){
+
+    const {params, query}: any = req
+
+    if(params.provider_id != undefined && query.search != undefined){
+      Products.listByProviders(parseInt(params.provider_id), query.search, res)
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando o id do fornecedor (provider_id) ou parâmetro de pesquisa'
+      })
+    }
+
+  },
+  
+  async editProviderProduct(req: Request, res: Response){
+    const {query}: any = req
+
+    if(query.providerId != undefined && query.productId != undefined 
+      && query.field != undefined && query.value != undefined){
+        Products.editProviderProduct(query.providerId, query.productId , query.field, query.value, res)
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando parametros'
+      })
+    }
+    
+  }
 };
