@@ -48,14 +48,14 @@ export default {
 
   async providerProductsByRef(req: Request, res: Response){
 
-    const {params, query}: any = req
+    const {query}: any = req
 
-    if(params.provider_id != undefined && query.search != undefined){
-      Products.listByProviders(parseInt(params.provider_id), query.search, res)
+    if(query.provider_id != undefined && query.product_reference != undefined){
+      Products.getProviderProductByRef(query.provider_id, query.product_reference, res)
     } else {
       res.status(400).json({
         code: 400,
-        message: 'está faltando o id do fornecedor (provider_id) ou parâmetro de pesquisa'
+        message: 'está faltando o id do fornecedor (provider_id) ou o id do produto'
       })
     }
 
@@ -63,6 +63,8 @@ export default {
   
   async editProviderProduct(req: Request, res: Response){
     const {query}: any = req
+
+    console.log(query)
 
     if(query.providerId != undefined && query.productId != undefined 
       && query.field != undefined && query.value != undefined){

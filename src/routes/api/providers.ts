@@ -16,7 +16,7 @@ const providersRouter = Router();
     providersRouter.post('/providers/link-products', ProviderController.handleProductsNotLinked)
     
     providersRouter.get('/providers/products/list/:provider_id', ProductController.listProviderProducts)
-    providersRouter.get('/providers/products/:provider_reference', ProductController.providerProductsByRef)
+    providersRouter.get('/providers/products/', ProductController.providerProductsByRef)
     providersRouter.post('/providers/products/edit', ProductController.editProviderProduct)
 
 export default providersRouter;
