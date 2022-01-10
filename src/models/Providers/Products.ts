@@ -429,10 +429,16 @@ class Products implements IProviderProducts {
 
         async function updateDB(providerId: number, productId: number, field: string, value: string | number): Promise<void>{
             return new Promise(resolve => {
-                const sql = `UPDATE providers_products SET ${field} = ${value} 
+
+                const values = {
+                    last_update: new Date()
+                }
+
+                const sql = `UPDATE providers_products 
+                SET ${field} = ${value}, ?
                 WHERE provider_id = ${providerId} AND product_reference = ${productId}`
 
-                Connect.query(sql, (erro, resultado) => {
+                Connect.query(sql, values, (erro, resultado) => {
                     if (erro) {
                         console.log(erro)
                         res.status(400).json({
