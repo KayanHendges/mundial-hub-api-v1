@@ -64,8 +64,6 @@ export default {
   async editProviderProduct(req: Request, res: Response){
     const {query}: any = req
 
-    console.log(query)
-
     if(query.providerId != undefined && query.productId != undefined 
       && query.field != undefined && query.value != undefined){
         Products.editProviderProduct(query.providerId, query.productId , query.field, query.value, res)
