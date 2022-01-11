@@ -33,21 +33,35 @@ interface IProviderProductsList {
     lastUpdate: string;
 }
 
+interface IQuery {
+    search: string;
+    collum: string;
+    order: string;
+}
+
 interface IProviderProducts {
     getProductsNotLinked(providerId: number, param: string, search: string, res: Response): Promise<void>;
     handleProductsNotLinked(ids: IIds, handleFunction: string, res: Response): Promise<void>;
-    listByProviders(providerId: number, search: string, res: Response): void;
+    listByProviders(providerId: number, query: IQuery, res: Response): void;
     editProviderProduct(providerId: number, productId: number, field: string, value: string | number, res: Response): void;
     getProviderProductByRef(providerId: number, productId: number, res: Response): void;
 }
 
 class Products implements IProviderProducts {
     
-    async listByProviders(providerId: number, search: string, res: Response){
+    async listByProviders(providerId: number, query: IQuery, res: Response){
 
-        const searchQuery = getSearchQuery(search)
+        const searchQuery = getSearchQuery(query.search)
+        const collum = query.collum != undefined ? getCollum(query.collum) : 'p.reference'
+        const order = query.order != undefined ? getOrder(query.order) : 'desc' 
 
-        const products = await getProducts(providerId, searchQuery)
+        const params = {
+            search: searchQuery,
+            collum: collum,
+            order: order
+        }
+
+        const products = await getProducts(providerId, params)
 
         res.status(200).json({
             code: 200,
@@ -56,12 +70,13 @@ class Products implements IProviderProducts {
             lastUpdate: products.lastUpdate
         })
         
-        async function getProducts(providerId: number, search: string): Promise<IProviderProductsList>{
+        async function getProducts(providerId: number, params: IQuery): Promise<IProviderProductsList>{
             return new Promise(resolve => {
 
                 const sql = `SELECT pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type, pp.last_update
                 FROM produtos p JOIN providers_products pp ON p.hub_id = pp.hub_id JOIN providers pv on pv.provider_id = pp.provider_id
-                WHERE pp.provider_id = ${providerId} ${search}
+                WHERE pp.provider_id = ${providerId} ${searchQuery}
+                ORDER BY ${params.collum} ${params.order}
                 LIMIT 0, 20`
 
                 Connect.query(sql, (erro, resultado: any[]) => {
@@ -179,6 +194,42 @@ class Products implements IProviderProducts {
             } else {
                 return ''
             }
+        }
+
+        function getCollum(collum: string){
+            
+            if(collum == 'stock'){
+                return 'pp.product_stock'
+            }
+
+            if(collum == 'provider_cost'){
+                return 'pp.product_price'
+            }
+
+            if(collum == 'name'){
+                return 'p.product_name'
+            }
+
+            if(collum == 'reference'){
+                return 'p.reference'
+            }
+
+            return 'p.reference'
+
+        }
+
+        function getOrder(collum: string){
+            
+            if(collum == 'asc'){
+                return collum
+            }
+
+            if(collum == 'desc'){
+                return collum
+            }
+
+            return 'desc'
+
         }
     }
 

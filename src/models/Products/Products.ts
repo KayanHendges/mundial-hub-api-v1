@@ -1562,10 +1562,14 @@ class Products {
                 .catch(erro => {
                     console.log(erro)
                     console.log(erro.response.data.causes)
-                    res.status(400).json({
-                        code: 400,
-                        message: `Erro ao salvar regras do kit Id Tray ${pricing.tray_product_id} - 668385, causas: ${erro.response.data}`
-                    })
+                    if(erro.response.data.causes[0] == 'It is not possible to change the products of the kit, the same is related to a Free Market announcement.'){
+                        resolve(saveRulesDB(kit, pricing, rules))
+                    } else {
+                        res.status(400).json({
+                            code: 400,
+                            message: `Erro ao salvar regras do kit Id Tray ${pricing.tray_product_id} - 668385, causas: ${erro.response.data.causes}`
+                        })
+                    }
                 })
             })
         }
