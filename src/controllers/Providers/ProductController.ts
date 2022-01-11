@@ -48,6 +48,20 @@ export default {
 
   },
 
+  async listProvidersByHubId(req: Request, res: Response){
+
+    const {params} = req
+
+    if(params.hub_id != undefined){
+      Products.listProvidersByHubId(parseInt(params.hub_id), res)
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando o hub_id do produto'
+      })
+    }
+  },
+
   async providerProductsByRef(req: Request, res: Response){
 
     const {query}: any = req

@@ -18,7 +18,18 @@ interface IProviderProductDetails {
     hubId: number;
 }
 
+interface IProvidersStock {
+    providerName: string;
+    providerId: number;
+    stock: number;
+    cost: number;
+    additionalCost: string;
+    totalCost: number;
+}
+
 interface IProviderProductToList {
+    providerName: string;
+    providerId: number;
     providerReference: number;
     reference: string;
     productName: string;
@@ -30,7 +41,7 @@ interface IProviderProductToList {
 
 interface IProviderProductsList {
     products: IProviderProductToList[]
-    lastUpdate: string;
+    lastUpdate?: string;
 }
 
 interface IQuery {
@@ -41,6 +52,7 @@ interface IQuery {
 
 interface IProviderProducts {
     getProductsNotLinked(providerId: number, param: string, search: string, res: Response): Promise<void>;
+    listProvidersByHubId(hubId: number, res: Response): Promise<void>;
     handleProductsNotLinked(ids: IIds, handleFunction: string, res: Response): Promise<void>;
     listByProviders(providerId: number, query: IQuery, res: Response): void;
     editProviderProduct(providerId: number, productId: number, field: string, value: string | number, res: Response): void;
@@ -73,7 +85,7 @@ class Products implements IProviderProducts {
         async function getProducts(providerId: number, params: IQuery): Promise<IProviderProductsList>{
             return new Promise(resolve => {
 
-                const sql = `SELECT pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type, pp.last_update
+                const sql = `SELECT pv.provider_id, pv.provider_name, pp.product_reference, p.reference, p.product_name, pp.product_stock, pp.product_price, pv.standart_costs, pv.cost_type, pp.last_update
                 FROM produtos p JOIN providers_products pp ON p.hub_id = pp.hub_id JOIN providers pv on pv.provider_id = pp.provider_id
                 WHERE pp.provider_id = ${providerId} ${searchQuery}
                 ORDER BY ${params.collum} ${params.order}
@@ -90,6 +102,8 @@ class Products implements IProviderProducts {
                         if(resultado.length > 0){
                             const products = resultado.map(product => {
                                 return {
+                                    providerId: product.provider_id,
+                                    providerName: product.provider_name,
                                     providerReference: product.product_reference,
                                     reference: product.reference,
                                     productName: product.product_name,
@@ -231,6 +245,82 @@ class Products implements IProviderProducts {
             return 'desc'
 
         }
+    }
+
+    async listProvidersByHubId(hubId: number, res: Response){
+
+        const providers = await getProviders(hubId)
+
+        res.status(200).json({
+            code: 200,
+            providers: providers
+        })
+
+        async function getProviders(hubId: number): Promise<IProvidersStock[]>{
+            return new Promise(resolve => {
+
+                const sql = `SELECT pv.provider_id, pv.provider_name, pv.standart_costs, pv.cost_type, pp.product_stock, pp.product_price
+                FROM providers_products pp JOIN providers pv ON pp.provider_id=pv.provider_id
+                WHERE pp.hub_id=${hubId} AND pp.product_stock > 0
+                ORDER BY pp.product_stock DESC, pp.product_price ASC` 
+
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: 'erro ao se conectar ao banco de dados'
+                        })
+                    } else {
+                        if(resultado.length > 0){
+                            const products = resultado.map(product => {
+                                return {
+                                    providerId: product.provider_id,
+                                    providerName: product.provider_name,
+                                    stock: product.product_stock,
+                                    cost: product.product_price,
+                                    additionalCost: getAdditionalCost(product.standart_costs, product.cost_type),
+                                    totalCost: calcTotalCost(product.product_price, product.standart_costs, product.cost_type)
+                                }
+                            })
+
+                            resolve(products)
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })                
+            })
+        }
+
+        function getAdditionalCost(cost: number, costType: string): string{
+            if(cost == 0){
+                return ''
+            }
+            
+            if(costType == '$' || costType == '%'){
+                return `${cost}${costType}`
+            }
+
+            return ''
+        }
+
+        function calcTotalCost(price: number, cost: number, costType: string): number{
+            if(cost == 0){
+                return price
+            }
+
+            if(costType == '$'){
+                return price + cost
+            }
+            
+            if(costType == '%'){
+                return parseFloat((price * ((cost/100)+1)).toFixed(2))
+            }
+
+            return price
+        }
+
     }
 
     async getProductsNotLinked(providerId: number, param: string, search: string, res: Response){

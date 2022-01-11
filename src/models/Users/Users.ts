@@ -14,7 +14,8 @@ class Users {
 
         function getCount(){
             return new Promise(resolve => {
-                const sql = `SELECT COUNT(request_id) FROM requisições_tray`
+                const sql = `SELECT COUNT(request_id) FROM requisições_tray 
+                WHERE query LIKE '%mundialpneumaticos%'`
     
                 Connect.query(sql, (erro, resultado) => {
                     if(erro){
