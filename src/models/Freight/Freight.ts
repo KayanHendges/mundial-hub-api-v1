@@ -106,6 +106,8 @@ class Freight {
 
             async function responseBrasil(params: any, json: any, res: Response): Promise<any>{
 
+                console.log(json.cotacao.resultado)
+
                 const validatedShippingList = await validateShippingList(json.cotacao.resultado)
                 const cheapDelivery = validatedShippingList[0]
                 const expressDelivery = getExpressDelivery(validatedShippingList)
@@ -146,19 +148,23 @@ class Freight {
             async function validateShippingList(shippingList: any[]): Promise<any>{
                 const list: any[] = []
 
+                const postDay = 1
                 const productionTime = await productTime
+
+                console.log(shippingList[0])
 
                 shippingList.map(shipping => {
                     if(shipping.transportadora.text == "Rodonaves"){
-                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+productionTime+2).toString()
-                        shipping.prazo_max.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
+                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+postDay+2).toString()
+                        shipping.prazo_max.text = (parseInt(shipping.prazo_max.text)+productionTime).toString()
                     } else {
-                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
-                        shipping.prazo_max.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
+                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+postDay).toString()
+                        shipping.prazo_max.text = (parseInt(shipping.prazo_max.text)+postDay+productionTime).toString()
                     }
                     list.push(shipping)
                 })
 
+                console.log(list[0])
                 return list
             }
 
@@ -396,9 +402,10 @@ class Freight {
     async getProductTime(trayId: number, quantity: number){
         
         const providerId = await getProvider(trayId, quantity)
+        console.log(providerId, quantity)
 
         if(providerId == 1){ // local
-            return 1
+            return 0
         }
 
         if(providerId == 2){ // Luper
@@ -406,11 +413,11 @@ class Freight {
         }
 
         if(providerId == 3){ // Roddar
-            return 5
+            return 4
         }
 
         if(providerId == 4){ // Duncan
-            return 2
+            return 1
         }
 
         return 4
