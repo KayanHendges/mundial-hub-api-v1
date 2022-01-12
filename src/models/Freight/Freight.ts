@@ -398,7 +398,7 @@ class Freight {
         const providerId = await getProvider(trayId, quantity)
 
         if(providerId == 1){ // local
-            return 0
+            return 1
         }
 
         if(providerId == 2){ // Luper
@@ -406,11 +406,11 @@ class Freight {
         }
 
         if(providerId == 3){ // Roddar
-            return 4
+            return 5
         }
 
         if(providerId == 4){ // Duncan
-            return 1
+            return 2
         }
 
         return 4
