@@ -106,8 +106,6 @@ class Freight {
 
             async function responseBrasil(params: any, json: any, res: Response): Promise<any>{
 
-                console.log(json.cotacao.resultado)
-
                 const validatedShippingList = await validateShippingList(json.cotacao.resultado)
                 const cheapDelivery = validatedShippingList[0]
                 const expressDelivery = getExpressDelivery(validatedShippingList)
@@ -151,8 +149,6 @@ class Freight {
                 const postDay = 1
                 const productionTime = await productTime
 
-                console.log(shippingList[0])
-
                 shippingList.map(shipping => {
                     if(shipping.transportadora.text == "Rodonaves"){
                         shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+postDay+2).toString()
@@ -164,7 +160,6 @@ class Freight {
                     list.push(shipping)
                 })
 
-                console.log(list[0])
                 return list
             }
 
