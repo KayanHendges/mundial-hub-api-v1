@@ -14,6 +14,9 @@ class Freight {
 
         const query = `https://services.frenet.com.br/Logistics/tray.asmx/GetShippingQuote?token=${token}&cep=${params.cep}&cep_destino=${params.cep_destino}&envio=${params.envio}&num_ped=${params.num_ped}&prods=${params.prods}&session_id=${params.session_id}`
 
+        const prods = params.prods.split(';')
+        const productTime = this.getProductTime(parseInt(prods[6]), parseInt(prods[4]))
+
         axios.get(query).then(response => {
             const newDate = getTime(addHours(new Date(), -3))
             console.log('tempo de resposta Frenet', newDate - date)
@@ -23,7 +26,6 @@ class Freight {
                 compact: true
              })
             
-            //  console.log(response.data)
             if(json.cotacao.resultado.length > 0){
                 if(params.token == 'scpneus' || params.token == 'mundialpneumaticos'){
                     getResponseTray(params, json, res)
@@ -102,9 +104,9 @@ class Freight {
                 res.send(xml)
             }
 
-            function responseBrasil(params: any, json: any, res: Response): any{
+            async function responseBrasil(params: any, json: any, res: Response): Promise<any>{
 
-                const validatedShippingList = validateShippingList(json.cotacao.resultado)
+                const validatedShippingList = await validateShippingList(json.cotacao.resultado)
                 const cheapDelivery = validatedShippingList[0]
                 const expressDelivery = getExpressDelivery(validatedShippingList)
 
@@ -141,13 +143,18 @@ class Freight {
                 res.send(xml)
             }
 
-            function validateShippingList(shippingList: any[]): any{
+            async function validateShippingList(shippingList: any[]): Promise<any>{
                 const list: any[] = []
 
+                const productionTime = await productTime
 
                 shippingList.map(shipping => {
                     if(shipping.transportadora.text == "Rodonaves"){
-                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+2).toString()
+                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+productionTime+2).toString()
+                        shipping.prazo_max.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
+                    } else {
+                        shipping.prazo_min.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
+                        shipping.prazo_max.text = (parseInt(shipping.prazo_min.text)+productionTime).toString()
                     }
                     list.push(shipping)
                 })
@@ -296,7 +303,6 @@ class Freight {
         var getProduct = false
 
         const medidas = await getDimensions(trayProductId, amount).then(response => {
-            console.log(response)
             if(response.success == false){
                 return getProduct
             } else {
@@ -328,7 +334,6 @@ class Freight {
                     if(erro){
                         console.log(erro)
                     } else {
-                        console.log(resultado.length)
                         if(resultado.length > 0){
                             resolve([
                                 (resultado[0].length/100),
@@ -386,6 +391,55 @@ class Freight {
                 sellerMpToken: "pgUQJbjxJ03o"
             }
         }
+    }
+
+    async getProductTime(trayId: number, quantity: number){
+        
+        const providerId = await getProvider(trayId, quantity)
+
+        if(providerId == 1){ // local
+            return 0
+        }
+
+        if(providerId == 2){ // Luper
+            return 1
+        }
+
+        if(providerId == 3){ // Roddar
+            return 4
+        }
+
+        if(providerId == 4){ // Duncan
+            return 1
+        }
+
+        return 4
+
+        async function getProvider(trayId: number, quantity: number): Promise<number>{
+            return new Promise(resolve => {
+
+                const sql = `SELECT pp.provider_id
+                FROM tray_produtos tp JOIN providers_products pp ON tp.hub_id = pp.hub_id
+                JOIN providers pv ON pp.provider_id = pv.provider_id
+                WHERE pp.product_stock >= ${quantity} AND tp.tray_product_id = ${trayId}
+                ORDER BY pp.provider_id ASC LIMIT 0,1`
+
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if (erro) {
+                        console.log(erro)
+                        resolve(0)
+                    } else {
+                        if(resultado.length > 0){
+                            resolve(resultado[0].provider_id)
+                        } else {
+                            resolve(0)
+                        }
+                    }
+                })
+
+            })
+        }
+                
     }
 
 }
