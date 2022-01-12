@@ -1,5 +1,5 @@
 import axios from "axios"
-import { addHours, getTime } from "date-fns"
+import { addHours, getTime, roundToNearestMinutes } from "date-fns"
 import { Response } from "express"
 import convert from "xml-js"
 import Connect from "../../database/Connect"
@@ -396,9 +396,9 @@ class Freight {
 
     async getProductTime(trayId: number, quantity: number){
         
-        const providerId = await getProvider(trayId, quantity)
-        console.log(providerId, quantity)
-
+        const product = await checkKitQuantity(trayId)
+        const providerId = await getProvider(product.trayId, quantity*product.quantity)
+        
         if(providerId == 1){ // local
             return 0
         }
@@ -416,6 +416,37 @@ class Freight {
         }
 
         return 4
+
+        async function checkKitQuantity(trayId: number): Promise<{trayId: number, quantity: number}>{
+            return new Promise(resolve => {
+                
+                const sql = `SELECT quantity, tray_product_id FROM produtos_kits
+                WHERE tray_product_parent_id=${trayId}`
+
+                Connect.query(sql, (erro, resultado: any[]) => {
+                    if (erro) {
+                        console.log(erro)
+                        resolve({
+                            trayId: trayId,
+                            quantity: 1
+                        })
+                    } else {
+                        if(resultado.length > 0){
+                            resolve({
+                                trayId: parseInt(resultado[0].tray_product_id),
+                                quantity: parseInt(resultado[0].quantity)
+                            })
+                        } else {
+                            resolve({
+                                trayId: trayId,
+                                quantity: 1
+                            })
+                        }
+                    }
+                })
+
+            })
+        }
 
         async function getProvider(trayId: number, quantity: number): Promise<number>{
             return new Promise(resolve => {
