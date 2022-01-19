@@ -110,11 +110,11 @@ class Freight {
                 const cheapDelivery = validatedShippingList[0]
                 const expressDelivery = getExpressDelivery(validatedShippingList)
 
-                expressDelivery.transportadora.text = 'Expressa'
+                expressDelivery.transportadora.text = `Expressa - ${expressDelivery.codigo.text}`
                 expressDelivery.servico.text = ''
                 expressDelivery.imagem_frete.text = ''
 
-                cheapDelivery.transportadora.text = 'Normal'
+                cheapDelivery.transportadora.text = `Normal - ${cheapDelivery.codigo.text}`
                 cheapDelivery.servico.text = ''
                 cheapDelivery.imagem_frete.text = ''
                 
