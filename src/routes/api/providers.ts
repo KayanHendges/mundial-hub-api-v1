@@ -7,9 +7,10 @@ const providersRouter = Router();
 
     providersRouter.get('/providers/list', ProviderController.getProviders)
 
-    providersRouter.get('/providers/convert-product/local', ProductController.ConvertProductsLocal)
+    // providersRouter.get('/providers/convert-product/local', ProductController.ConvertProductsLocal)
     providersRouter.get('/providers/convert-product/luper', ProductController.ConvertProductsLuper)
     providersRouter.get('/providers/convert-product/roddar', ProductController.ConvertProductsRoddar)
+    providersRouter.get('/providers/convert-product/duncan', ProductController.ConvertProductsDuncan)
     
     providersRouter.get('/providers/link/:provider_id', ProviderController.productsNotLinked)
     providersRouter.get('/providers/link-products', List.listToLinkProviders)

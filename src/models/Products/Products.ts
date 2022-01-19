@@ -1052,23 +1052,74 @@ class Products {
         const ScPneusCredentials = await OAuth2Tray.getStoreCredentials(1049898)
 
         const unitary = await validateUnitary(values.unitary)
-        const kit2 = values.kit2.trayId != 0 ? await validateKit(values.unitary, values.kit2, 2) : false
-        const kit4 = values.kit4.trayId != 0 ? await validateKit(values.unitary, values.kit4, 4) : false
+        const kit2 = await validateKit(values.unitary, values.kit2, 2)
+        const kit4 = await validateKit(values.unitary, values.kit4, 4)
 
-        const unitaryMundial = await postTrayUnitary(unitary.product, unitary.pricing.mundial, MundialCredentials)
-        const unitaryScPneus = await postTrayUnitary(unitary.product, unitary.pricing.scpneus, ScPneusCredentials)
-        const unitaryDB = unitaryMundial.success && unitaryScPneus.success ? await saveUnitaryDB(unitary) : res.status(400).json({
-            code: 400,
-            message: 'erro ao salvar unitário e/ou precificação no banco de dados'
-        })
+        if(values.handleTray == 'delete'){
 
-        const kit2Mundial = kit2 == false ? false : await postTrayKit(kit2.kit, kit2.pricing.mundial, kit2.rules, 2)
-        const kit4Mundial = kit4 == false ? false : await postTrayKit(kit4.kit, kit4.pricing.mundial, kit4.rules, 4)
-        
-        res.status(200).json({
-            code: 200,
-            message: 'produto salvo com sucesso'
-        })
+            await deleteTray(kit4.pricing.mundial.tray_product_id, MundialCredentials)
+            await deleteTrayIdKitRules(kit4.kit, kit4.pricing.mundial, kit4.rules)
+            await deleteTrayIdPricingDB(kit4.kit, kit4.pricing.mundial)
+            await deleteTrayIdDB(kit4.kit)
+
+            await deleteTray(kit2.pricing.mundial.tray_product_id, MundialCredentials)
+            await deleteTrayIdKitRules(kit2.kit, kit2.pricing.mundial, kit2.rules)
+            await deleteTrayIdPricingDB(kit2.kit, kit4.pricing.mundial)
+            await deleteTrayIdDB(kit2.kit)
+
+            await deleteTray(unitary.pricing.mundial.tray_product_id, MundialCredentials)
+            await deleteTrayIdPricingDB(unitary.product, unitary.pricing.mundial)
+            
+            await updateSCPneusPricingDB(unitary.product, unitary.pricing.scpneus, 1049898)
+            
+            await deleteTrayIdDB(unitary.product)
+
+            res.status(200).json({
+                code: 200,
+                message: 'produto salvo com sucesso'
+            })
+
+        }
+
+        if(values.handleTray == 'create'){
+
+            const recreatedUnitaryMundial = await repostTrayUnitary(unitary.product, unitary.pricing.mundial, MundialCredentials)
+            const unitaryScPneus = await postTrayUnitary(unitary.product, unitary.pricing.scpneus, ScPneusCredentials)
+            const unitaryDB = recreatedUnitaryMundial.success && unitaryScPneus.success ? await updateProductDB(unitary.product) : res.status(400).json({
+                code: 400,
+                message: 'erro ao salvar unitário e/ou precificação no banco de dados'
+            })
+
+            await updateUnitaryTrayIdPricing(unitary.product, unitary.pricing.mundial, recreatedUnitaryMundial.id, 668385)
+            await updateUnitaryTrayIdPricing(unitary.product, unitary.pricing.scpneus, unitary.pricing.scpneus.tray_product_id, 1049898)
+
+            await repostTrayKit(kit2.kit, kit2.pricing.mundial, kit2.rules, recreatedUnitaryMundial.id)
+            await repostTrayKit(kit4.kit, kit4.pricing.mundial, kit4.rules, recreatedUnitaryMundial.id)
+
+            res.status(200).json({
+                code: 200,
+                message: 'produto salvo com sucesso'
+            })
+
+        }
+
+        if(values.handleTray == 'edit') {
+            const unitaryMundial = await postTrayUnitary(unitary.product, unitary.pricing.mundial, MundialCredentials)
+            const unitaryScPneus = await postTrayUnitary(unitary.product, unitary.pricing.scpneus, ScPneusCredentials)
+            const unitaryDB = unitaryMundial.success && unitaryScPneus.success ? await saveUnitaryDB(unitary) : res.status(400).json({
+                code: 400,
+                message: 'erro ao salvar unitário e/ou precificação no banco de dados'
+            })
+    
+            const kit2Mundial = kit2 == false ? false : await postTrayKit(kit2.kit, kit2.pricing.mundial, kit2.rules, 2)
+            const kit4Mundial = kit4 == false ? false : await postTrayKit(kit4.kit, kit4.pricing.mundial, kit4.rules, 4)
+            
+            res.status(200).json({
+                code: 200,
+                message: 'produto salvo com sucesso'
+            })
+        }
+
 
         async function validateUnitary(unitary: any): Promise<any>{
 
@@ -1208,6 +1259,7 @@ class Products {
                     },
                 },
                 rules: {
+                    quantity: quantity,
                     hub_id: kit.hubId,
                     discount_type: kit.rules.discountType,
                     discount_value: typeof(kit.rules.discountValue) == 'string' ? parseFloat(kit.rules.discountValue.replace(',', '.')) : parseFloat(kit.rules.discountValue) ,
@@ -1217,6 +1269,8 @@ class Products {
 
             return object
         }
+
+        // just edit functions
 
         async function postTrayUnitary(product: any, pricing: any, store: any): Promise<any>{
             return new Promise(async(resolve, reject) => {
@@ -1578,6 +1632,446 @@ class Products {
             return new Promise(async(resolve) => {
 
                 const ruleDB = {
+                    kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: rules.price_rule
+                }
+
+                const sql = `UPDATE produtos_kits SET ? WHERE hub_id=${kit.hub_id}`
+
+                Connect.query(sql, ruleDB, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+
+        // delete functions
+
+        async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
+            return new Promise(resolve => {
+
+                const query = `${storeCredentials.api_address}/products/${trayId}/?access_token=${storeCredentials.access_token}`
+                Requests.saveRequest(query)
+                
+                const config: any = {
+                    method: 'delete',
+                    url: query,
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 200){
+                        resolve()
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${erro.response.data}`
+                    })
+                })
+
+
+            })
+        }
+
+        async function deleteTrayIdKitRules(kit: any, pricing: any, rules: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const ruleDB = {
+                    tray_product_id: 0,
+                    tray_product_parent_id: 0,
+                    kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: rules.price_rule
+                }
+
+                const sql = `UPDATE produtos_kits SET ? WHERE hub_id=${kit.hub_id}`
+
+                Connect.query(sql, ruleDB, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+
+        async function deleteTrayIdPricingDB(kit: any, pricing: any): Promise<void>{
+            return new Promise(async(resolve) => {
+
+                const noIdPricing = {
+                    ...pricing,
+                    tray_product_id: 0,
+                }
+
+                const sql = `UPDATE tray_produtos SET ? WHERE hub_id=${kit.hub_id} AND tray_store_id=668385`
+
+                Connect.query(sql, noIdPricing, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+        async function updateSCPneusPricingDB(product: any, pricing: any, store: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE tray_produtos SET ? WHERE hub_id=${product.hub_id} AND tray_store_id=${store}` 
+                
+                Connect.query(sql, pricing, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar a precificação do unitário com tray_product_id=${pricing.tray_product_id}`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+
+        async function deleteTrayIdDB(product: any): Promise<void>{
+            return new Promise(async(resolve) => {
+
+                const sql = `UPDATE produtos SET ? WHERE hub_id=${product.hub_id}`
+
+                Connect.query(sql, product, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o product hub_id ${product.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+        // recreate functions 
+
+        async function repostTrayUnitary(product: any, pricing: any, store: any): Promise<any>{
+            return new Promise(async(resolve, reject) => {
+
+                const productObj = {
+                    Product: {
+                        is_kit: 0,
+                        ean: product.ean,
+                        name: product.product_name,
+                        ncm: product.ncm,
+                        description: product.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        promotional_price: pricing.tray_promotional_price,
+                        start_promotion: pricing.start_promotion,
+                        end_promotion: pricing.end_promotion,
+                        brand:product.brand,
+                        model:product.model,
+                        weight: product.weight,
+                        length: product.length,
+                        width: product.width,
+                        height: product.height,
+                        stock: pricing.tray_stock,
+                        minimum_stock: pricing.tray_minimum_stock,
+                        minimum_stock_alert: '1',
+                        category_id: pricing.tray_main_category_id,
+                        available: 1,
+                        availability: product.availability,
+                        availability_days: product.availability_days,
+                        reference: product.reference,
+                        hot: "1",
+                        release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        // release_date: "",
+                        picture_source_1: product.picture_source_1,
+                        picture_source_2: product.picture_source_2,
+                        picture_source_3: product.picture_source_3,
+                        picture_source_4: product.picture_source_4,
+                        picture_source_5: product.picture_source_5,
+                        picture_source_6: product.picture_source_6,
+                        metatag:[{type: "description",
+                        content: product.product_name,
+                        local:1}],
+                        // virtual_product: product.virtual_product
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${store.api_address}/products/?access_token=${store.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve({
+                            success: true,
+                            id: response.data.id
+                        })
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao criar unitário na Tray ${store.tray_adm_user}, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function updateProductDB(product: any): Promise<void>{
+            return new Promise(async(resolve) => {
+
+                const sql = `UPDATE produtos SET ? WHERE hub_id=${product.hub_id}`
+
+                Connect.query(sql, product, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o product hub_id ${product.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+        async function updateUnitaryTrayIdPricing(product: any, pricing: any, trayId: number, store: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const newPricing = {
+                    ...pricing,
+                    tray_product_id: trayId
+                }
+
+                const sql = `UPDATE tray_produtos SET ? WHERE hub_id=${product.hub_id} AND tray_store_id=${store}` 
+
+                Connect.query(sql, newPricing, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar a precificação do unitário com tray_product_id=${pricing.tray_product_id}`
+                        })
+                    } else {
+                        resolve({success: true})
+                    }
+                })
+            })
+        }
+
+        async function repostTrayKit(kit: any, pricing: any, rules: any, trayId: number): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const productObj = {
+                    Product: {
+                        is_kit: 1,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        price: pricing.tray_price,
+                        cost_price: pricing.cost_price,
+                        // promotional_price: pricing.tray_promotional_price,
+                        // start_promotion: pricing.start_promotion,
+                        // end_promotion: pricing.end_promotion,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        // stock: pricing.tray_stock,
+                        category_id: pricing.tray_main_category_id,
+                        available: 1,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        hot: "1",
+                        release: "1",
+                        // additional_button: "0",
+                        related_categories: pricing.tray_related_categories.length > 0 ? pricing.tray_related_categories.split(',') : [],
+                        release_date: "",
+                        picture_source_1: kit.picture_source_1,
+                        picture_source_2: kit.picture_source_2,
+                        picture_source_3: kit.picture_source_3,
+                        picture_source_4: kit.picture_source_4,
+                        picture_source_5: kit.picture_source_5,
+                        picture_source_6: kit.picture_source_6,
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                        // virtual_product: kit.virtual_product
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${MundialCredentials.api_address}/products/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(updateKitDB(kit, pricing, rules, trayId, response.data.id))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao criar kit Tray mundial, causas: ${JSON.stringify(erro.response.data.causes)}`
+                    })
+                })
+            })
+        }
+
+        async function updateKitDB(kit: any, pricing: any, rules: any, trayId: number, trayParentId: number): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `UPDATE produtos SET ? WHERE hub_id=${kit.hub_id}`
+
+                Connect.query(sql, kit, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o kit no banco de dados`
+                        })
+                    } else {
+                        resolve(updateKitPricingDB(kit, pricing, rules, trayId, trayParentId))
+                    }
+                })
+            })
+        }
+
+        async function updateKitPricingDB(kit: any, pricing: any, rules: any, trayId: any, trayParentId: number): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE tray_produtos SET ? WHERE hub_id=${kit.hub_id}`
+
+                const pricingSql = {
+                    ...pricing,
+                    tray_product_id: trayParentId,
+                }
+
+                Connect.query(sql, pricingSql, (erro, resultado) => {
+                    if (erro) {
+                        console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
+                    } else {
+                        resolve(repostTrayRules(kit, pricing, rules, trayId, trayParentId))
+                    }
+                })
+            })
+        }
+
+        async function repostTrayRules(kit: any, pricing: any, rules: any, trayId: any, trayParentId: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                console.log(rules)
+
+                const rulesObj = JSON.stringify([{
+                    product_parent_id: trayParentId,
+                    product_id: trayId,
+                    quantity: rules.quantity,
+                    discount_type: rules.discount_type,
+                    discount_value: rules.discount_value,
+                    price_rule: parseInt(rules.price_rule)
+                }])
+
+                const query = `${MundialCredentials.api_address}/products/kits/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: rulesObj
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(updateRulesDB(kit, pricing, rules, trayId, trayParentId))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar regras do kit Id Tray ${trayId} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function updateRulesDB(kit: any, pricing: any, rules: any, trayId: number, trayParentId: number): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const ruleDB = {
+                    tray_product_parent_id: trayParentId,
+                    tray_product_id: trayId,
                     kit_price: pricing.tray_promotional_price == 0 ? pricing.tray_price : pricing.tray_promotional_price, 
                     discount_type: rules.discount_type,
                     discount_value: rules.discount_value,

@@ -20,5 +20,6 @@ const productsRoutes = Router();
     productsRoutes.patch('/products/:reference', Page.edit)
     productsRoutes.delete('/products/:reference', Page.delete)
 
+    // productsRoutes.get('/products/delete-tray', List.deleteNoStockTray)
             
 export default productsRoutes;

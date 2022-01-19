@@ -1,5 +1,8 @@
+import axios from "axios";
 import { Response } from "express";
 import Connect from "../../database/Connect";
+import OAuth2Tray from "../Auth/OAuth2Tray";
+import Requests from "../Tray/Requests";
 
 interface IProductsList {
     hubId: number;
@@ -266,6 +269,120 @@ class List implements IList {
                 }
             }
         })
+    }
+
+    async deleteNoStockTray(res: Response){
+
+        const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
+
+        const idsList = await getTrayIds()
+
+        await productLoop(idsList, 0)
+
+        res.send('ok')
+
+        async function getTrayIds(): Promise<any[]>{
+            return new Promise(resolve => {
+
+                const sql = `SELECT tray_product_id, hub_id
+                FROM tray_produtos
+                WHERE tray_stock = 0 AND tray_store_id = 668385 AND tray_product_id > 0
+                ORDER BY hub_id DESC`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if( erro ) {
+                        console.log(erro)
+                    } else {
+                        if(resultado.length > 0){
+                            resolve(resultado)
+                        } else {
+                            res.send('nenhum produto com estoque')
+                        }
+                    }
+                })
+
+            })
+        }
+
+        async function productLoop(list: any[], index: number): Promise<void>{
+            return new Promise(async(resolve) => {
+                if(list.length > index){
+
+                    await deleteTray(list[index].tray_product_id, MundialCredentials)
+                    await updatePricing(list[index].hub_id)
+                    await updateRules(list[index].hub_id)
+
+                    console.log(`${list[index].tray_product_id} deletado com sucesso - ${index}/${list.length} restantes`)
+
+                    resolve(productLoop(list, index+1))
+
+                } else {
+                    resolve()
+                }
+
+            })
+        }
+
+        async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
+            return new Promise(resolve => {
+
+                const query = `${storeCredentials.api_address}/products/${trayId}/?access_token=${storeCredentials.access_token}`
+                Requests.saveRequest(query)
+                
+                const config: any = {
+                    method: 'delete',
+                    url: query,
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 200){
+                        resolve()
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro.response)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${erro.response.data}`
+                    })
+                })
+
+
+            })
+        }
+
+        async function updatePricing(hubId: number): Promise<void>{
+            return new Promise(resolve => {
+            
+                const sql = `UPDATE tray_produtos SET tray_product_id = 0 WHERE hub_id=${hubId}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if( erro ) {
+                        console.log(erro)
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
+
+        async function updateRules(hubId: number): Promise<void>{
+            return new Promise(resolve => {
+            
+                const sql = `UPDATE produtos_kits SET tray_product_id = 0, tray_product_parent_id = 0 WHERE hub_id=${hubId}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if( erro ) {
+                        console.log(erro)
+                    } else {
+                        resolve()
+                    }
+                })
+            })
+        }
     }
 }
 

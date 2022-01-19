@@ -48,6 +48,12 @@ export default {
     if(params.reference != undefined){
       List.kitsByRef(params.reference, res)
     }
+  },
+
+  async deleteNoStockTray(req: Request, res: Response){
+
+    List.deleteNoStockTray(res)
+    
   }
   
 };

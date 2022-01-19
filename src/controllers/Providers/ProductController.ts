@@ -31,6 +31,14 @@ export default {
     await SaveProducts.saveProductsDB(products.products, 3, res)
   },
 
+  async ConvertProductsDuncan(req: Request, res: Response) {
+
+    
+    const products = ConvertProducts.duncanText('duncan_products.txt')
+
+    await SaveProducts.saveProductsDB(products.products, 4, res)
+  },
+
   async listProviderProducts(req: Request, res: Response){
 
     const {params, query}: any = req

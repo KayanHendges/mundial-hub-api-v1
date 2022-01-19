@@ -1,4 +1,4 @@
-import { parseISO } from 'date-fns'
+import { parse, parseISO } from 'date-fns'
 import fs from 'fs'
 import Connect from '../../database/Connect'
 
@@ -223,6 +223,89 @@ class ConvertProducts implements IConvertProducts {
           brand: words[4],
           stock: 4,
           price: price,
+          additionalCosts: 0,
+          lastUpdate: lastUpdate
+        })
+      }
+    })
+
+    
+    fillText.map(product => {
+      if(typeof(product.productId) != "number" && product.price < 250){
+        console.log(product)
+      }
+    })
+
+    return {
+      products: fillText
+    }
+
+  }
+
+  duncanText(file: string){
+
+    const textProducts = fs.readFileSync(`./src/files/${file}`, 'utf8').split('\n')
+
+    const fillText: IProduct[] = [] 
+    const lastUpdate = parseISO(textProducts[0].replace('\r', ''))
+
+    textProducts.map((row, index) => {
+
+      if(row.length > 40){
+        const words = row.split(' ')
+        
+        const productName: string[] = []
+        var stock = 0
+        var price = 0
+        var promotionalPrice = 0
+        var startPriceIndex = -1
+
+        const id: number[] = []
+
+        words[0].split('').map( n => {
+          if(n == 'N'){
+            id.push(11)
+          }
+          if(n == 'X'){
+            id.push(22)
+          }
+          if(n != 'N' && n != 'X'){
+            id.push(parseInt(n))
+          }
+        })
+  
+        words.map( (crt, i) => {
+        
+          if(i > 0 && startPriceIndex == -1){
+            productName.push(crt)
+          }
+
+          if(words[i+3] == 'R$' && startPriceIndex == -1){
+            startPriceIndex = i+3
+          }
+
+          if(i+1 == startPriceIndex){
+            stock = parseInt(crt)
+          }
+
+          if(crt == 'R$' && price > 0 && promotionalPrice == 0){
+            promotionalPrice = parseFloat((words[i+1].replace('.', '')).replace(',', '.'))
+          }
+
+          if(crt == 'R$' && i == startPriceIndex){
+            price = parseFloat((words[i+1].replace('.', '')).replace(',', '.'))
+            price = price * 0.9 // desconto Duncan
+            price = parseFloat(price.toFixed(2))
+          }
+
+        })
+
+        fillText.push({
+          productId: parseInt(id.join('')),
+          productName: productName.join(' '),
+          brand: words[1].toUpperCase(),
+          stock: stock,
+          price: promotionalPrice == 0 ? price : promotionalPrice,
           additionalCosts: 0,
           lastUpdate: lastUpdate
         })
