@@ -1055,6 +1055,8 @@ class Products {
         const kit2 = await validateKit(values.unitary, values.kit2, 2)
         const kit4 = await validateKit(values.unitary, values.kit4, 4)
 
+        console.log(values.handleTray)
+
         if(values.handleTray == 'delete'){
 
             await deleteTray(kit4.pricing.mundial.tray_product_id, MundialCredentials)
@@ -1677,10 +1679,15 @@ class Products {
                 })
                 .catch(erro => {
                     console.log(erro.response)
-                    res.status(400).json({
-                        code: 400,
-                        message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${erro.response.data}`
-                    })
+                    
+                    if(erro.response.data.causes[0] == 'Invalid parameter id.'){
+                        resolve()
+                    } else {
+                        res.status(400).json({
+                            code: 400,
+                            message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${JSON.stringify(erro.response.data)}`
+                        })
+                    }
                 })
 
 

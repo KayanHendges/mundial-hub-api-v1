@@ -372,7 +372,7 @@ class List implements IList {
         async function updateRules(hubId: number): Promise<void>{
             return new Promise(resolve => {
             
-                const sql = `UPDATE produtos_kits SET tray_product_id = 0, tray_product_parent_id = 0 WHERE hub_id=${hubId}`
+                const sql = `UPDATE produtos_kits SET tray_product_id = 0, tray_product_parent_id = 0 WHERE hub_id=${hubId} AND tray_store_id = 668385`
 
                 Connect.query(sql, (erro, resultado) => {
                     if( erro ) {
