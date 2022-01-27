@@ -3,6 +3,22 @@ import { addHours, differenceInMinutes, parseISO } from "date-fns"
 import Connect from "../../database/Connect"
 import Requests from "../Tray/Requests"
 
+interface ICredentialsTray {
+    credential_id: number;
+    consumer_key: string;
+    consumer_secret: string;
+    code: string;
+    tray_adm_user: string;
+    store: string;
+    api_address: string;
+    store_host: string;
+    access_token: string;
+    refresh_token: string;
+    date_expiration_access_token: string;
+    date_expiration_refresh_token: string;
+    date_activated: string;
+}
+
 class OAuth2Tray {
 
     async tokenRoutine(){
@@ -78,7 +94,7 @@ class OAuth2Tray {
                         }
                     })
                 })
-                .catch(erro => console.log(erro.response.data, token.refresh_token))
+                .catch(erro => console.log(erro.response, token.refresh_token))
             })
         }
 
@@ -98,7 +114,7 @@ class OAuth2Tray {
         })
     }
 
-    async getStoreCredentials(storeId: any): Promise<any>{
+    async getStoreCredentials(storeId: number): Promise<ICredentialsTray>{
         return new Promise((resolve, reject) => {
             const sql = `SELECT * FROM credenciais_tray WHERE store=${storeId}`
 

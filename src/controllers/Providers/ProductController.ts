@@ -43,8 +43,6 @@ export default {
 
     const {params, query}: any = req
 
-    console.log(query)
-
     if(params.provider_id != undefined && query.search != undefined){
       Products.listByProviders(parseInt(params.provider_id), query, res)
     } else {

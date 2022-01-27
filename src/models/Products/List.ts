@@ -275,19 +275,23 @@ class List implements IList {
 
         const MundialCredentials = await OAuth2Tray.getStoreCredentials(668385)
 
-        const idsList = await getTrayIds()
+        const idsList = await getProducts()
+        const resultProducts: any[] = []
+        console.log(idsList.length)
 
         await productLoop(idsList, 0)
 
-        res.send('ok')
+        console.log(resultProducts.length)
 
-        async function getTrayIds(): Promise<any[]>{
+        res.send(resultProducts)
+
+
+        async function getProducts(): Promise<any[]>{
             return new Promise(resolve => {
 
-                const sql = `SELECT tray_product_id, hub_id
-                FROM tray_produtos
-                WHERE tray_stock = 0 AND tray_store_id = 668385 AND tray_product_id > 0
-                ORDER BY hub_id DESC`
+                const sql = `SELECT p.hub_id, p.reference, tp.tray_product_id 
+                FROM produtos p JOIN tray_produtos tp ON p.hub_id=tp.hub_id
+                WHERE tp.tray_store_id = 668385 AND p.is_kit=0 AND tp.tray_product_id > 0 AND tp.tray_stock BETWEEN 1 AND 3`
 
                 Connect.query(sql, (erro, resultado) => {
                     if( erro ) {
@@ -296,7 +300,7 @@ class List implements IList {
                         if(resultado.length > 0){
                             resolve(resultado)
                         } else {
-                            res.send('nenhum produto com estoque')
+                            res.send('nenhum produto')
                         }
                     }
                 })
@@ -304,15 +308,23 @@ class List implements IList {
             })
         }
 
+
         async function productLoop(list: any[], index: number): Promise<void>{
             return new Promise(async(resolve) => {
                 if(list.length > index){
 
-                    await deleteTray(list[index].tray_product_id, MundialCredentials)
-                    await updatePricing(list[index].hub_id)
-                    await updateRules(list[index].hub_id)
+                    const kits = await getKitProduct(list[index].reference)
+                    
+                    if(kits.length == 1){
+                        await postTrayKit(kits[0], list[index])
+                    }
 
-                    console.log(`${list[index].tray_product_id} deletado com sucesso - ${index}/${list.length} restantes`)
+                    if(kits.length == 2){
+                        await postTrayKit(kits[0], list[index])
+                        await postTrayKit(kits[1], list[index])
+                    }
+
+                    console.log(`referencia ${list[index].reference} salvo com sucesso - ${index+1}/${list.length}`)
 
                     resolve(productLoop(list, index+1))
 
@@ -323,66 +335,232 @@ class List implements IList {
             })
         }
 
-        async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
+        async function getProductsToEdit(reference: string): Promise<any[]>{
+            return new Promise(resolve => {
+                
+                const sql = `SELECT p.reference, p.hub_id
+                FROM produtos p JOIN tray_produtos tp ON p.hub_id=tp.hub_id JOIN produtos_kits pk ON tp.hub_id=pk.hub_id
+                WHERE pk.quantity > 1 AND tp.tray_product_id = 0 AND p.reference = ${reference}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if(erro){
+                        console.log(erro)
+                    } else {
+                        if(resultado.length > 0){
+                            resolve(resultado)
+                        } else {
+                            resolve([])
+                        }
+                    }
+                })
+
+            })
+        }
+
+
+        async function getKitProduct(reference: string): Promise<any[]> {
             return new Promise(resolve => {
 
-                const query = `${storeCredentials.api_address}/products/${trayId}/?access_token=${storeCredentials.access_token}`
+                const sql = `SELECT
+                p.hub_id,
+                p.ean,
+                p.product_name,
+                p.ncm,
+                p.product_description,
+                tp.tray_price,
+                tp.cost_price,
+                p.brand,
+                p.model,
+                p.weight,
+                p.length,
+                p.height,
+                p.width,
+                tp.tray_main_category_id,
+                p.availability,
+                p.availability_days,
+                p.reference,
+                tp.tray_related_categories,
+                p.picture_source_1,
+                p.picture_source_2,
+                p.picture_source_3,
+                p.picture_source_4,
+                p.picture_source_5,
+                p.picture_source_6,
+                pk.quantity,
+                pk.discount_type,
+                pk.discount_value,
+                pk.price_rule
+                FROM produtos p JOIN tray_produtos tp ON p.hub_id=tp.hub_id JOIN produtos_kits pk ON tp.hub_id=pk.hub_id
+                WHERE pk.quantity > 1 AND tp.tray_product_id = 0 AND p.reference = ${reference}`
+
+                Connect.query(sql, (erro, resultado) => {
+                    if( erro ){
+                        console.log(erro)
+                    } else {
+                        if(resultado.length > 0){
+                            console.log(reference, 'tem')
+                            console
+                            resolve(resultado)
+                        } else {
+                            console.log(reference, 'não tem')
+                            resolve([])
+                        }
+                    }
+                })
+            })
+        }
+
+        async function postTrayKit(kit: any, product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const productObj = {
+                    Product: {
+                        is_kit: 1,
+                        ean: kit.ean,
+                        name: kit.product_name,
+                        ncm: kit.ncm,
+                        description: kit.product_description,
+                        price: kit.tray_price,
+                        cost_price: kit.cost_price,
+                        brand:kit.brand,
+                        model:kit.model,
+                        weight: kit.weight,
+                        length: kit.length,
+                        width: kit.width,
+                        height: kit.height,
+                        category_id: kit.tray_main_category_id,
+                        available: 1,
+                        availability: kit.availability,
+                        availability_days: kit.availability_days,
+                        reference: kit.reference,
+                        hot: "1",
+                        release: "1",
+                        related_categories: kit.tray_related_categories.length > 0 ? kit.tray_related_categories.split(',') : [],
+                        release_date: "",
+                        picture_source_1: kit.picture_source_1,
+                        picture_source_2: kit.picture_source_2,
+                        picture_source_3: kit.picture_source_3,
+                        picture_source_4: kit.picture_source_4,
+                        picture_source_5: kit.picture_source_5,
+                        picture_source_6: kit.picture_source_6,
+                        metatag:[{type: "description",
+                        content: kit.product_name,
+                        local:1}],
+                    }
+                }
+                const trayProduct = JSON.stringify(productObj)
+
+                const query = `${MundialCredentials.api_address}/products/?access_token=${MundialCredentials.access_token}`
                 Requests.saveRequest(query)
-                
+
                 const config: any = {
-                    method: 'delete',
+                    method: 'post',
                     url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: trayProduct
                 }
 
                 axios(config)
                 .then(response => {
-                    if(response.data.code == 200){
-                        resolve()
+                    if(response.data.code == 201){
+                        resolve(saveKitPricingDB(kit, response.data.id, product))
                     } else {
                         console.log(response.data)
                     }
                 })
                 .catch(erro => {
-                    console.log(erro.response)
+                    console.log(erro.response.data.causes)
                     res.status(400).json({
                         code: 400,
-                        message: `Erro ao deletar kit Id Tray ${trayId} - ${storeCredentials.store}, causas: ${erro.response.data}`
+                        message: `Erro ao criar kit Tray mundial, causas: ${JSON.stringify(erro.response.data.causes)}`
                     })
                 })
-
-
             })
         }
 
-        async function updatePricing(hubId: number): Promise<void>{
-            return new Promise(resolve => {
-            
-                const sql = `UPDATE tray_produtos SET tray_product_id = 0 WHERE hub_id=${hubId}`
+        async function saveKitPricingDB(kit: any, trayParentId: number, product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+                const sql = `UPDATE tray_produtos SET tray_product_id = ${trayParentId} WHERE hub_id = ${kit.hub_id}`
+
 
                 Connect.query(sql, (erro, resultado) => {
-                    if( erro ) {
+                    if (erro) {
                         console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar o pricing do kit hub_id ${kit.hub_id} no banco de dados`
+                        })
                     } else {
-                        resolve()
+                        resolve(postTrayRules(kit, trayParentId, product))
                     }
                 })
             })
         }
 
-        async function updateRules(hubId: number): Promise<void>{
-            return new Promise(resolve => {
-            
-                const sql = `UPDATE produtos_kits SET tray_product_id = 0, tray_product_parent_id = 0 WHERE hub_id=${hubId} AND tray_store_id = 668385`
+        async function postTrayRules(kit: any, trayParentId: number, product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const rulesObj = JSON.stringify([{
+                    product_parent_id: trayParentId,
+                    product_id: product.tray_product_id,
+                    quantity: kit.quantity,
+                    discount_type: kit.discount_type,
+                    discount_value: kit.discount_value,
+                    price_rule: parseInt(kit.price_rule)
+                }])
+
+                const query = `${MundialCredentials.api_address}/products/kits/?access_token=${MundialCredentials.access_token}`
+                Requests.saveRequest(query)
+
+                const config: any = {
+                    method: 'post',
+                    url: query,
+                    headers: { 
+                      'Content-Type': 'application/json'
+                    },
+                    data: rulesObj
+                }
+
+                axios(config)
+                .then(response => {
+                    if(response.data.code == 201){
+                        resolve(saveRulesDB(kit, trayParentId, product))
+                    } else {
+                        console.log(response.data)
+                    }
+                })
+                .catch(erro => {
+                    console.log(erro)
+                    console.log(erro.response.data.causes)
+                    res.status(400).json({
+                        code: 400,
+                        message: `Erro ao salvar regras do kit Id Tray ${trayParentId} - 668385, causas: ${erro.response.data}`
+                    })
+                })
+            })
+        }
+
+        async function saveRulesDB(kit: any, trayParentId: number, product: any): Promise<any>{
+            return new Promise(async(resolve) => {
+
+                const sql = `UPDATE produtos_kits SET tray_product_parent_Id = ${trayParentId} WHERE hub_id = ${kit.hub_id}`
 
                 Connect.query(sql, (erro, resultado) => {
-                    if( erro ) {
+                    if (erro) {
                         console.log(erro)
+                        res.status(400).json({
+                            code: 400,
+                            message: `erro ao salvar regra do kit ${kit.quantity} no banco de dados`
+                        })
                     } else {
-                        resolve()
+                        resolve({success: true})
                     }
                 })
             })
         }
+
+
     }
 }
 

@@ -3,10 +3,10 @@ import Connect from "../../database/Connect"
 
 class ConvertCategories {
 
-    async hubMainCategoryToTray(id: any, store: any): Promise<any>{
+    async hubMainCategoryToTray(id: number, store: number): Promise<number>{
         return new Promise(async(resolve) => {
 
-            if(parseInt(store) == 668385){
+            if(store == 668385){
                 const sql = `SELECT tray_category_id FROM categorias WHERE hub_category_id=${id}`
 
                 Connect.query(sql, (erro, resultado) => {
@@ -14,14 +14,14 @@ class ConvertCategories {
                         console.log(erro)
                     } else {
                         if(resultado.length > 0) {
-                            resolve(resultado[0].tray_category_id)
+                            resolve(Math.floor(resultado[0].tray_category_id))
                         } else {
                             resolve(1)
                         }
                     }
                 })
             }
-            if(parseInt(store) == 1049898){
+            if(store == 1049898){
                 const sql = `SELECT tray_scpneus_category_id FROM categorias WHERE hub_category_id=${id}`
 
                 Connect.query(sql, (erro, resultado) => {
@@ -29,7 +29,7 @@ class ConvertCategories {
                         console.log(erro)
                     } else {
                         if(resultado.length > 0) {
-                            resolve(resultado[0].tray_scpneus_category_id)
+                            resolve(Math.floor(resultado[0].tray_scpneus_category_id))
                         } else {
                             resolve(2163)
                         }
@@ -40,16 +40,16 @@ class ConvertCategories {
         })
     }
 
-    async trayMainCategoryToHub(id: any, store: any): Promise<any>{
+    async trayMainCategoryToHub(id: number, store: number): Promise<number>{
         return new Promise(async(resolve) => {
             
             const sql = sqlStore()
             
             function sqlStore(): any  {
-                if(parseInt(store) == 668385){
+                if(store == 668385){
                     return `SELECT hub_category_id FROM categorias WHERE tray_category_id=${id}`
                 }
-                if(parseInt(store) == 1049898){
+                if(store == 1049898){
                     return `SELECT hub_category_id FROM categorias WHERE tray_scpneus_category_id=${id}`
                 }
             }
@@ -59,7 +59,7 @@ class ConvertCategories {
                     console.log(erro)
                 } else {
                     if(resultado.length > 0){
-                        resolve(resultado[0].hub_category_id)
+                        resolve(Math.floor(resultado[0].hub_category_id))
                     } else {
                         resolve(0)
                     }
@@ -68,16 +68,16 @@ class ConvertCategories {
         })
     }
 
-    async trayRelatedCategoriesToHub(array: any[], store: any): Promise<any>{
+    async trayRelatedCategoriesToHub(array: number[], store: number): Promise<number[]>{
         return new Promise(async(resolve) => {
 
             const sql = sqlStore()
             
             function sqlStore(): any{
-                if(parseInt(store) == 668385){
+                if(store == 668385){
                     return `SELECT hub_category_id FROM categorias WHERE tray_category_id IN (${array.toString()}) ORDER BY hub_category_id ASC`
                 }
-                if(parseInt(store) == 1049898){
+                if(store == 1049898){
                     return `SELECT hub_category_id FROM categorias WHERE tray_scpneus_category_id IN (${array.toString()}) ORDER BY hub_category_id ASC`
                 }
             }
@@ -86,46 +86,59 @@ class ConvertCategories {
                 if(erro){
                     console.log(erro)
                 } else {
-                    const resultList: any = []
-                    resultado.map(result => {
-                        resultList.push(result.hub_category_id)
-                    })
-                    resolve(resultList)
+                    if(resultado.length > 0){
+                        const resultList: number[] = []
+                        resultado.map(result => {
+                            resultList.push(Math.floor(result.hub_category_id))
+                        })
+                        resolve(resultList)
+                    } else [
+                        resolve([])
+                    ]
                 }
             })
         })
     }
 
-    async hubRelatedCategoriesToTray(array: any[], store: any): Promise<any>{
+    async hubRelatedCategoriesToTray(array: number[], store: number): Promise<number[]>{
         return new Promise(async(resolve) => {
 
-            if(parseInt(store) == 668385){
+            if(store == 668385){
                 const sql = `SELECT tray_category_id FROM categorias WHERE hub_category_id IN (${array.toString()}) ORDER BY tray_category_id ASC`
 
                 Connect.query(sql, (erro, resultado: any[]) => {
                     if(erro){
                         console.log(erro)
                     } else {
-                        const resultList: any[] = []
-                        resultado.map(result => {
-                            resultList.push(result.tray_category_id)
-                        })
-                        resolve(resultList)
+                        if(resultado.length > 0){
+                            const resultList: number[] = []
+                            resultado.map(result => {
+                                resultList.push(Math.floor(result.tray_category_id))
+                            })
+                            resolve(resultList)
+                        } else {
+                            resolve([])
+                        }
                     }
                 })
             }
-            if(parseInt(store) == 1049898){
+            if(store == 1049898){
                 const sql = `SELECT tray_scpneus_category_id FROM categorias WHERE hub_category_id IN (${array.toString()}) ORDER BY tray_scpneus_category_id ASC`
 
                 Connect.query(sql, (erro, resultado: any[]) => {
                     if(erro){
                         console.log(erro)
                     } else {
-                        const resultList: any[] = []
-                        resultado.map(result => {
-                            resultList.push(result.tray_scpneus_category_id)
-                        })
-                        resolve(resultList)
+                        if(resultado.length > 0){
+                            const resultList: number[] = []
+                            resultado.map(result => {
+                                resultList.push(Math.floor(result.tray_scpneus_category_id))
+                            })
+                            resolve(resultList)
+                        } else {
+                            resolve([])
+
+                        }
                     }
                 })
             }

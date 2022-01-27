@@ -20,4 +20,6 @@ mainRouter.use(usersRouter)
 mainRouter.use(providersRouter)
 mainRouter.use(freightRouter)
 
+mainRouter.get('/temp/test', temp.Temp)
+
 export default mainRouter;
