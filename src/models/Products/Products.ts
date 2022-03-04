@@ -1183,7 +1183,7 @@ class Products {
                 .catch(erro => {
                     console.log(erro.response)
                     
-                    if(erro.response.data.causes[0] == 'Invalid parameter i.'){
+                    if(erro.response.data.causes[0] == 'Invalid parameter id.'){
                         resolve()
                     } else {
                         res.status(400).json({
@@ -2080,6 +2080,11 @@ class Products {
 
         async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
             return new Promise(resolve => {
+
+                if(trayId == 0){
+                    resolve()
+                    return
+                }
 
                 const query = `${storeCredentials.api_address}/products/${trayId}/?access_token=${storeCredentials.access_token}`
                 Requests.saveRequest(query)
