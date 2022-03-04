@@ -1,6 +1,6 @@
 import { MysqlError } from "mysql";
 import Connect from "../../database/Connect";
-import { IKitRulesInsert, IPricingInsert, IProductInsert } from "../../types/product";
+import { IKitRulesInsert, IKitRulesUpdate, IPricingInsert, IPricingUpdate, IProductInsert } from "../../types/product";
 
 interface IStore {
     tray_adm_user: string;
@@ -116,6 +116,46 @@ class Product {
         })
     }
 
+    async updatePricing(pricing: IPricingUpdate, condition: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+            
+            const sqlProduct = {
+                tray_adm_user: pricing.tray_adm_user,
+                tray_store_id: pricing.tray_store_id,
+                hub_id: pricing.hub_id,
+                tray_product_id: pricing.tray_product_id,
+                is_kit: pricing.is_kit,
+                cost_price: pricing.cost_price,
+                profit: pricing.profit,
+                tray_price: pricing.tray_price,
+                tray_promotional_price: pricing.tray_promotional_price,
+                start_promotion: pricing.start_promotion,
+                end_promotion: pricing.end_promotion,
+                tray_stock: pricing.tray_stock,
+                tray_minimum_stock: pricing.tray_minimum_stock,
+                tray_main_category_id: pricing.tray_main_category_id,
+                tray_related_categories: pricing.tray_related_categories?.join(','),
+            }
+
+            this.removeUndefined(sqlProduct)
+
+            const sql = `UPDATE tray_produtos SET ? WHERE ${condition}`
+
+            Connect.query(sql, sqlProduct, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao atualizar no banco de dados hubId ${pricing.hub_id} com a condição: ${condition}`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
     async insertKitRules(pricing: IKitRulesInsert): Promise<number>{
         return new Promise((resolve, reject) => {
             
@@ -144,6 +184,52 @@ class Product {
                 }
             })
         })
+    }
+
+    
+    async updateKitRules(kitRules: IKitRulesUpdate, condition: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+            
+            const sqlProduct = {
+                tray_rule_id: kitRules.tray_rule_id,
+                tray_pricing_id: kitRules.tray_pricing_id,
+                tray_product_id: kitRules.tray_product_id,
+                hub_id: kitRules.hub_id,
+                tray_product_parent_id: kitRules.tray_product_parent_id,
+                kit_price: kitRules.kit_price,
+                quantity: kitRules.quantity,
+                price_rule: kitRules.price_rule,
+                discount_type: kitRules.discount_type,
+                discount_value: kitRules.discount_value,
+                modified: new Date()
+            }
+
+            this.removeUndefined(sqlProduct)
+
+            const sql = `UPDATE produtos_kits SET ? WHERE ${condition}`
+
+            Connect.query(sql, sqlProduct, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao atualizar no banco de dados hubId ${kitRules?.hub_id} com a condição: ${condition}`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
+    removeUndefined(obj: any){
+        Object.keys(obj).forEach(key => {
+            if (obj[key] === undefined) {
+              delete obj[key];
+            }
+        });
+        return obj
     }
 
 }

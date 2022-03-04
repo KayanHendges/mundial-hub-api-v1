@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import Create from '../../controllers/Products/Create';
 import List from '../../controllers/Products/List';
 import Page from '../../controllers/Products/Page';
 
@@ -15,11 +16,19 @@ const productsRoutes = Router();
     productsRoutes.get('/products/reference', Page.lastReference)
     productsRoutes.get('/products/model-suggestion', Page.modelSuggestion)
     
-    productsRoutes.post('/products/page/', Page.create)
+    productsRoutes.post('/products/page/', Page.create) // excluir depois
     productsRoutes.post('/products/page/kits', Page.createKits)
     productsRoutes.patch('/products/:reference', Page.edit)
     productsRoutes.delete('/products/:reference', Page.delete)
+ 
+    // create 
+    productsRoutes.post('/products/create/unitary', Create.unitary)
+    productsRoutes.post('/products/create/pricing', Create.pricing)
+    productsRoutes.post('/products/create/pricing/kit', Create.kitPricingRule)
 
-    productsRoutes.get('/products/delete-tray', List.deleteNoStockTray)
+    productsRoutes.post('/products/create/unitary-tray', Create.unitaryTray)
+    productsRoutes.post('/products/create/kit-tray', Create.kitTray)
+
+    // productsRoutes.get('/products/delete-tray', List.deleteNoStockTray)
             
 export default productsRoutes;

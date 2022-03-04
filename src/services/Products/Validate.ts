@@ -3,7 +3,8 @@ import format from "date-fns/format"
 import ConvertCategories from "../../models/Categories/ConvertCategories"
 import Datetime from "../datetime"
 
-interface IDetailsInput {
+export interface IDetailsInput {
+    is_kit: number;
     ean: string;
     ncm: string;
     product_name: string;
@@ -27,16 +28,21 @@ interface IDetailsInput {
 }
 
 export interface IPricingInput {
+    tray_product_id?: number;
     cost: number,
     profit: number,
     price: number,
+    hub_id: number;
     promotional_price: number,
     start_promotion: Date | string,
     end_promotion: Date | string,
     stock: number,
+    main_category_id: number;
+    related_categories: number[];
 }
 
-interface IRulesInput {
+export interface IRulesInput {
+    tray_product_id?: number;
     quantity: number;
     discount_type: string;
     discount_value: number;
@@ -89,6 +95,8 @@ interface IDetailsOutput {
 }
 
 interface IPricingOutput {
+    hub_id: number;
+    tray_product_id: number;
     is_kit: number,
     cost_price: number,
     profit: number,
@@ -123,7 +131,7 @@ class Validate {
 
     async unitary({details, pricing}: IProductInput): Promise<IProductOutput>{
 
-        const object = {
+        const object: any = {
             details: {
                 is_kit: 0,
                 ean: toEmptyString(details.ean),
@@ -258,7 +266,7 @@ class Validate {
 
         const result = kitPrice(100, 2, 2, '%', 2)
 
-        const object = {
+        const object: any = {
             details: {
                 is_kit: 1,
                 ean: toEmptyString(details.ean),
@@ -410,6 +418,182 @@ class Validate {
 
             return price * quantity
         }
+    }
+
+    async hubProduct(product: IDetailsInput){
+        return {
+            is_kit: this.toInteger(product.is_kit),
+            ean: this.toEmptyString(product.ean),
+            ncm: this.toEmptyString(product.ncm),
+            product_name: this.toEmptyString(product.product_name),
+            product_description: this.toEmptyString(product.description),
+            brand: this.toEmptyString(product.brand),
+            model: this.toEmptyString(product.model),
+            weight: this.toInteger(product.weight),
+            length: this.toInteger(product.length),
+            width: this.toInteger(product.width),
+            height: this.toInteger(product.height),
+            main_category_id: this.toInteger(product.main_category_id),
+            related_categories: product.related_categories,
+            available: this.toInteger(product.available),
+            availability: this.toEmptyString(product.availability),
+            availability_days: this.toInteger(product.availabilityDays),
+            reference: this.toEmptyString(product.reference),
+            picture_source_1: this.toEmptyString(product.images[0].imageUrl),
+            picture_source_2: this.toEmptyString(product.images[1].imageUrl),
+            picture_source_3: this.toEmptyString(product.images[2].imageUrl),
+            picture_source_4: this.toEmptyString(product.images[3].imageUrl),
+            picture_source_5: this.toEmptyString(product.images[4].imageUrl),
+            picture_source_6: this.toEmptyString(product.images[5].imageUrl),
+            warranty: this.toEmptyString(product.warranty),
+            virtual_product: 0,
+            content: this.toEmptyString(product.product_name),
+            creation_date: await Datetime(),
+            modified: await Datetime(),
+            comments: this.toEmptyString(product.comments)
+        }
+    }
+
+    async createPricing(pricing: IPricingInput, storeId: number): Promise<IPricingOutput>{
+        
+
+        return {
+            is_kit: 0,
+            hub_id: pricing.hub_id,
+            tray_product_id: pricing.tray_product_id? pricing.tray_product_id : 0,
+            cost_price: this.toFloat(pricing.cost),
+            profit: this.profitCheck(this.toFloat(pricing.profit)),
+            tray_price: this.toFloat(pricing.price),
+            tray_promotional_price: this.toFloat(pricing.promotional_price),
+            start_promotion: this.toStringDate(pricing.start_promotion),
+            end_promotion: this.toStringDate(pricing.end_promotion),
+            tray_stock: this.toInteger(pricing.stock),
+            tray_minimum_stock: 1,
+            tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(pricing.main_category_id, storeId),
+            tray_related_categories: await ConvertCategories.hubRelatedCategoriesToTray(pricing.related_categories, storeId),
+            modified: await Datetime()
+        }
+    }
+
+    async createKitPricing(pricing: IPricingInput, rules: IRulesInput): Promise<IPricingOutput>{
+
+        const quantity = rules.quantity
+
+        return {
+            is_kit: 1,
+            hub_id: pricing.hub_id,
+            tray_product_id: pricing.tray_product_id? pricing.tray_product_id : 0,
+            cost_price: this.toFloat(pricing.cost) * quantity,
+            profit: this.profitCheck(this.toFloat(pricing.profit)),
+            tray_price: kitPrice(
+                this.toFloat(pricing.price),
+                quantity,
+                this.toInteger(rules.price_rule),
+                this.toEmptyString(rules.discount_type),
+                this.toFloat(rules.discount_value)
+                ),
+            tray_promotional_price: kitPrice(
+                this.toFloat(pricing.promotional_price),
+                quantity,
+                this.toInteger(rules.price_rule),
+                this.toEmptyString(rules.discount_type),
+                this.toFloat(rules.discount_value)
+                ),
+            start_promotion: this.toStringDate(pricing.start_promotion),
+            end_promotion: this.toStringDate(pricing.end_promotion),
+            tray_stock: Math.floor(this.toInteger(pricing.stock)/quantity),
+            tray_minimum_stock: 1,
+            tray_main_category_id: await ConvertCategories.hubMainCategoryToTray(pricing.main_category_id, 668385),
+            tray_related_categories: await ConvertCategories.hubRelatedCategoriesToTray(pricing.related_categories, 668385),
+            modified: await Datetime()
+        }
+
+        function kitPrice(price: number, quantity: number, priceRule: number, discountType: string, discountValue: number): number{
+            
+            if(price == 0){
+                return price
+            }
+            
+            if(priceRule == 1){
+                return price * quantity
+            }
+
+            if(discountType == '$'){
+                return ( price * quantity ) - discountValue 
+            }
+
+            if(discountType == '%') {
+                return ( price * quantity ) * ( 1 - ( discountValue / 100 ) )
+            }
+
+            return price * quantity
+        }
+    }
+
+    async createKitRule(){
+
+    }
+
+    toFloat(value: string | number): number{
+        if(typeof(value) == 'string'){
+            const cleanString = (value.replace('.', '')).replace(',', '.')
+            return parseFloat(cleanString)
+        } else {
+            return value
+        }
+    }
+
+    toInteger(value: string | number): number{
+        if(typeof(value) == 'string'){
+            const cleanString = (value.replace('.', '')).replace(',', '.')
+            return Math.floor(parseFloat(cleanString))
+        } else {
+            return value
+        }
+    }
+
+    profitCheck(profit: number): number{
+        if(profit > 1 && profit < 2){
+            return (profit * 100) - 100
+        }
+
+        if(profit > 0 && profit < 1){
+            return profit * 100
+        }
+
+        if(profit >= 2){
+            return profit
+        }
+
+        return profit
+    }
+
+    toStringDate(date: string | Date): string{
+
+        if(typeof(date) === 'object'){
+            return format(date, 'yyyy-MM-dd 00:00:00')
+        } else {
+            if(date.length == 0){
+                return 'yyyy-MM-dd 00:00:00'
+            }
+
+            return format(parseISO(date), 'yyyy-MM-dd 00:00:00')
+        }
+    }
+
+    toEmptyString(str: string): string{
+        if(str != undefined) {
+
+            if(str == null){
+                return ''
+            }
+
+            return str.toString()
+        } else {
+
+            return ''
+        }
+
     }
 }
 

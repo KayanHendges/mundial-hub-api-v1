@@ -28,6 +28,7 @@ export interface IProductPostUnitary {
     picture_source_4: string;
     picture_source_5: string;
     picture_source_6: string;
+    warranty: string;
 }
 
 export interface IProductKitRule {

@@ -53,6 +53,7 @@ class TrayProducts {
                     picture_source_6: product.picture_source_6,
                     metatag:[{type: "description",
                     content: product.product_name,
+                    warranty: product.warranty,
                     local:1}],
                 }
             }
@@ -95,6 +96,8 @@ class TrayProducts {
     async createKit(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
 
+            console.log(product)
+
             const productObj = {
                 Product: {
                     is_kit: 1,
@@ -132,10 +135,13 @@ class TrayProducts {
                     picture_source_6: product.picture_source_6,
                     metatag:[{type: "description",
                     content: product.product_name,
+                    warranty: product.warranty,
                     local:1}],
                 }
             }
+            console.log(productObj)
             const trayProduct = JSON.stringify(productObj)
+
 
             const query = `${store.api_address}/products/?access_token=${store.access_token}`
             Requests.saveRequest(query)
@@ -162,7 +168,7 @@ class TrayProducts {
             .catch(erro => {
                 if(erro.response.data.causes != undefined){
                     console.log(erro.response.data.causes)
-                    reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`)
+                    reject(`Erro ao cadastrar Kit na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`)
                 } else {
                     console.log(erro.response.data)
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)

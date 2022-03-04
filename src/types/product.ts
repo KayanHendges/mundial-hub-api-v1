@@ -168,6 +168,24 @@ export interface IPricingInsert {
     tray_related_categories: number[];
 }
 
+export interface IPricingUpdate {
+    tray_adm_user?: string,
+    tray_store_id?: number,
+    hub_id?: number;
+    tray_product_id?: number;
+    is_kit?: number;
+    cost_price?: number;
+    profit?: number;
+    tray_price?: number;
+    tray_promotional_price?: number;
+    start_promotion?: string;
+    end_promotion?: string;
+    tray_stock?: number;
+    tray_minimum_stock?: number;
+    tray_main_category_id?: number;
+    tray_related_categories?: number[];
+}
+
 export interface IKitRules {
     hub_rules_id: number;
     tray_rule_id: number | null;
@@ -194,4 +212,18 @@ export interface IKitRulesInsert {
     price_rule: number;
     discount_type: string;
     discount_value: number;
+}
+
+export interface IKitRulesUpdate {
+    hub_rules_id?: number;
+    tray_rule_id?: number | null;
+    tray_pricing_id?: number;
+    tray_product_id?: number;
+    hub_id?: number;
+    tray_product_parent_id?: number;
+    kit_price?: number;
+    quantity?: number;
+    price_rule?: number;
+    discount_type?: string;
+    discount_value?: number;
 }

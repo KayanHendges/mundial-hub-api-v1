@@ -559,8 +559,6 @@ class Products {
         const kit2 = await validateKit(values.unitary, values.kit2, 2)
         const kit4 = await validateKit(values.unitary, values.kit4, 4)
 
-        console.log(values.handleTray)
-
         if(values.handleTray == 'delete'){
 
             await deleteTray(kit4.pricing.mundial.tray_product_id, MundialCredentials)
@@ -586,6 +584,7 @@ class Products {
             })
 
         }
+
 
         if(values.handleTray == 'create'){
 
@@ -1184,7 +1183,7 @@ class Products {
                 .catch(erro => {
                     console.log(erro.response)
                     
-                    if(erro.response.data.causes[0] == 'Invalid parameter id.'){
+                    if(erro.response.data.causes[0] == 'Invalid parameter i.'){
                         resolve()
                     } else {
                         res.status(400).json({
@@ -1806,9 +1805,10 @@ class Products {
         Connect.query(sql, (erro, resultado) => {
             if(erro){
                 console.log(erro)
+                res.status(400).json({code: 400, message: 'erro ao buscar no banco de dados'})
             } else {
                 const lastReference = (parseInt(resultado[0].reference) + 1)
-                res.status(200).json(lastReference.toString())
+                res.status(200).json({code: 200, reference: lastReference.toString()})
             }
         })
     }
@@ -1883,7 +1883,7 @@ class Products {
         res.status(200).json({
             brand: brand.categoryName,
             model: model.categoryName,
-            relatedCategories: HubRelatedCategories
+            related_categories: HubRelatedCategories
         })
 
         async function getCategory(possibleCategory: string): Promise<any>{
