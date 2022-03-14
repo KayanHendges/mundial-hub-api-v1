@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Response } from "express";
 import Connect from "../../database/Connect";
+import ProductDataBase from "../../services/Products/ProductDataBase";
 import OAuth2Tray from "../Auth/OAuth2Tray";
 import Requests from "../Tray/Requests";
 
@@ -13,6 +14,18 @@ interface IList {
 }
 
 class List implements IList {
+
+    async unitary(reference: string){
+        return new Promise(async(resolve, reject) => {
+
+            const details = await ProductDataBase.getProduct({reference: reference}, true)
+            const arrayPricing = ProductDataBase.getPricing({ hub_id: details.hub_id }, false)
+            
+            const mundialPricing = arrayPricing.map( pricing => {
+                
+            } )
+        })
+    }
 
     async list(params: any, res: Response){
 

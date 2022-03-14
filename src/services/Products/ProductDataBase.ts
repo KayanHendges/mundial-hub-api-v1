@@ -1,13 +1,66 @@
-import { MysqlError } from "mysql";
 import Connect from "../../database/Connect";
-import { IKitRulesInsert, IKitRulesUpdate, IPricingInsert, IPricingUpdate, IProductInsert } from "../../types/product";
+import { IKitRules, IKitRulesInsert, IKitRulesUpdate, IPricing, IPricingInsert, IPricingUpdate, IProduct, IProductInsert, IProductUpdate } from "../../types/product";
 
 interface IStore {
     tray_adm_user: string;
     store: string;
 }
 
+type ProductIdentifierType = {hub_id?: number, reference?: number | string}
+
+type PricingIdentifierType = {hub_id?: number, tray_pricing_id?: number}
+
+type KitRulesIdentifierType = {hub_id?: number, tray_pricing_id?: number, hub_rules_id: number}
+
+type OnlyFirst = true | false | undefined
+
+type ProductType<T> =
+    T extends false ? IProduct[] :
+    T extends true ? IProduct :
+    T extends undefined ? IProduct : never;
+
+type PricingType<T> =
+    T extends false ? IPricing[] :
+    T extends true ? IPricing :
+    T extends undefined ? IPricing : never;
+
+type KitRulesType<T> =
+    T extends false ? IKitRules[] :
+    T extends true ? IKitRules :
+    T extends undefined ? IKitRules : never;
+
 class Product {
+
+    async getProduct<T extends OnlyFirst>(id: ProductIdentifierType, onlyFirst?: T, isKit?: number): Promise<ProductType<T>>{
+        return new Promise(async(resolve, reject) => {
+
+            if(!id.hub_id && !id.reference){
+                reject('está faltando o hub_id ou reference para buscar no banco de dados')
+                return
+            }
+
+            const condition = `${id.hub_id? 'hub_id' : 'reference'} = ${id.hub_id? id.hub_id : id.reference}`
+
+            const sql = `SELECT * FROM produtos WHERE ${condition} ORDER BY hub_id ASC`
+
+            Connect.query(sql, (erro, resultado) => {
+                if(erro){
+                    console.log(erro)
+                    reject(`erro ao buscar detalhes do produto ${condition} no banco de dados`)
+                } else {
+                    if(resultado.length == 0) {
+                        reject(`nenhum detalhe do produto foi encontrado com ${condition}`)
+                    } else {
+                        if(onlyFirst == true || onlyFirst == undefined){
+                            resolve(resultado[0])
+                        } else {
+                            resolve(resultado)
+                        }
+                    }
+                }
+            })
+        })
+    }
 
     async insert(product: IProductInsert): Promise<number>{
         return new Promise((resolve, reject) => {
@@ -77,6 +130,107 @@ class Product {
                 });
                 return obj
             }
+        })
+    }
+
+    async updateProduct(product: IProductUpdate, condition?: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+
+            const sqlProduct = {
+                ean: product.ean,
+                is_kit: product.is_kit,
+                reference: product.reference,
+                product_slug: product.product_slug,
+                ncm: product.ncm,
+                product_name: product.product_name,
+                product_title: product.product_title,
+                product_small_description: product.product_small_description,
+                product_description: product.product_description,
+                brand: product.brand,
+                model: product.model,
+                weight: product.weight,
+                length: product.length,
+                width: product.width,
+                height: product.height,
+                main_category_id: product.main_category_id,
+                related_categories: product.related_categories?.join(),
+                available: product.available,
+                availability: product.availability,
+                availability_days: product.availability_days,
+                warranty: product.warranty,
+                release_date: product.release_date,
+                picture_source_1: product.picture_source_1,
+                picture_source_1_90: product.picture_source_1_90,
+                picture_source_2: product.picture_source_2,
+                picture_source_2_90: product.picture_source_2_90,
+                picture_source_3: product.picture_source_3,
+                picture_source_3_90: product.picture_source_3_90,
+                picture_source_4: product.picture_source_4,
+                picture_source_4_90: product.picture_source_4_90,
+                picture_source_5: product.picture_source_5_90,
+                picture_source_5_90: product.picture_source_5_90,
+                picture_source_6: product.picture_source_6_90,
+                picture_source_6_90: product.picture_source_6_90,
+                metatag: product.metatag,
+                type: product.type,
+                content: product.content,
+                local: product.local,
+                virtual_product: product.virtual_product,
+                comments: product.comments,
+                modified: new Date(),
+            }
+
+            this.removeUndefined(sqlProduct)
+
+            const where = `WHERE hub_id=${product.hub_id}${condition? ' and ' : '' }${condition}`
+
+            const sql = `UPDATE produtos SET ? ${where}`
+
+            Connect.query(sql, sqlProduct, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao atualizar ${product.reference} - ${product.product_name} no banco de dados`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            }) 
+        })
+    }
+
+    async getPricing<T extends OnlyFirst>(id: PricingIdentifierType, onlyFirst?: T, storeId?: number): Promise<PricingType<T>>{
+        return new Promise(async(resolve, reject) => {
+
+            if(!id.hub_id && !id.tray_pricing_id){
+                reject('está faltando o hub_id ou tray_pricing_id para buscar no banco de dados')
+                return
+            }
+
+            const condition = `${id.tray_pricing_id? 'tray_pricing_id' : 'hub_id'} = ${id.tray_pricing_id? id.tray_pricing_id : id.hub_id}`
+
+            const storeCondition = `${storeId? 'and store_id' : '' } = ${storeId? storeId : ''}`
+
+            const sql = `SELECT * FROM tray_produtos WHERE ${condition} ${storeCondition} ORDER BY tray_pricing_id ASC`
+
+            Connect.query(sql, (erro, resultado) => {
+                if(erro){
+                    console.log(erro)
+                    reject(`erro ao buscar a precificação do produto com ${condition} no banco de dados`)
+                } else {
+                    if(resultado.length == 0) {
+                        reject(`nenhuma precificação do produto foi encontrado com ${condition}`)
+                    } else {
+                        if(id.tray_pricing_id || onlyFirst == true || onlyFirst == undefined){
+                            resolve(resultado[0])
+                        } else {
+                            resolve(resultado)
+                        }
+                    }
+                }
+            })
         })
     }
 
@@ -150,6 +304,40 @@ class Product {
                         resolve()
                     } else {
                         reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
+    async getKitRules<T extends OnlyFirst>(id: KitRulesIdentifierType, onlyFirst?: T, storeId?: number): Promise<PricingType<T>>{
+        return new Promise(async(resolve, reject) => {
+
+            if(!id.hub_id && !id.tray_pricing_id){
+                reject('está faltando o hub_id ou tray_pricing_id para buscar no banco de dados')
+                return
+            }
+
+            const condition = `${id.hub_rules_id? 'tray_rules_id' : id.tray_pricing_id? 'tray_pricing_id' : 'hub_id' } =
+            ${id.hub_rules_id? id.hub_rules_id : id.tray_pricing_id? id.tray_pricing_id : id.hub_id }`
+
+            const storeCondition = `${storeId? 'and store_id' : '' } = ${storeId? storeId : ''}`
+
+            const sql = `SELECT * FROM produtos_kits WHERE ${condition} ${storeCondition} ORDER BY hub_rules_id ASC`
+
+            Connect.query(sql, (erro, resultado) => {
+                if(erro){
+                    console.log(erro)
+                    reject(`erro ao buscar a precificação do produto com ${condition} no banco de dados`)
+                } else {
+                    if(resultado.length == 0) {
+                        reject(`nenhuma precificação do produto foi encontrado com ${condition}`)
+                    } else {
+                        if(id.tray_pricing_id || onlyFirst == true || onlyFirst == undefined){
+                            resolve(resultado[0])
+                        } else {
+                            resolve(resultado)
+                        }
                     }
                 }
             })

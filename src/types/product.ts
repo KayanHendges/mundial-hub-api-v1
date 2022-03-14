@@ -89,6 +89,7 @@ export interface IProductInsert {
 }
 
 export interface IProductUpdate {
+    hub_id: number;
     ean?: string;
     modified?: Date;
     is_kit?: number;
@@ -106,7 +107,7 @@ export interface IProductUpdate {
     width?: number;
     height?: number;
     main_category_id?: number;
-    related_categories?: string;
+    related_categories?: number[];
     available?: number;
     availability?: string;
     availability_days?: number;
@@ -129,7 +130,6 @@ export interface IProductUpdate {
     content?: string;
     local?: string;
     virtual_product?: number;
-    creation_date?: Date;
     comments?: string;
 }
 

@@ -3,6 +3,19 @@ import Products from '../../models/Products/Products';
 import List from '../../models/Products/List';
 
 export default {
+
+  async unitary(req: Request, res: Response){
+    const { body } = req
+
+    if(body.reference){
+      
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando a referencia no body'
+      })
+    }
+  },
   
   async list(req: Request, res: Response) {
     
