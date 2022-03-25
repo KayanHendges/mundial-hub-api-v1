@@ -10,7 +10,7 @@ type ProductIdentifierType = {hub_id?: number, reference?: number | string}
 
 type PricingIdentifierType = {hub_id?: number, tray_pricing_id?: number}
 
-type KitRulesIdentifierType = {hub_id?: number, tray_pricing_id?: number, hub_rules_id: number}
+type KitRulesIdentifierType = {hub_id?: number, tray_pricing_id?: number, hub_rules_id?: number}
 
 type OnlyFirst = true | false | undefined
 
@@ -31,7 +31,9 @@ type KitRulesType<T> =
 
 class Product {
 
-    async getProduct<T extends OnlyFirst>(id: ProductIdentifierType, onlyFirst?: T, isKit?: number): Promise<ProductType<T>>{
+    // products
+
+    async getProduct<T extends OnlyFirst>(id: ProductIdentifierType, onlyFirst?: T, isKit?: boolean): Promise<ProductType<T>>{
         return new Promise(async(resolve, reject) => {
 
             if(!id.hub_id && !id.reference){
@@ -41,19 +43,32 @@ class Product {
 
             const condition = `${id.hub_id? 'hub_id' : 'reference'} = ${id.hub_id? id.hub_id : id.reference}`
 
-            const sql = `SELECT * FROM produtos WHERE ${condition} ORDER BY hub_id ASC`
+            const isKitNumber = isKit == true? 1 : 0
+            
+            const isKitCondition = `${isKit != undefined? `AND is_kit = ${isKitNumber}` : '' }`
 
-            Connect.query(sql, (erro, resultado) => {
+            const sql = `SELECT * FROM produtos WHERE ${condition} ${isKitCondition} ORDER BY hub_id ASC`
+
+            Connect.query(sql, (erro, resultado): any => {
                 if(erro){
                     console.log(erro)
-                    reject(`erro ao buscar detalhes do produto ${condition} no banco de dados`)
+                    reject(`erro ao buscar detalhes do produto ${condition} ${isKitCondition} no banco de dados`)
                 } else {
                     if(resultado.length == 0) {
                         reject(`nenhum detalhe do produto foi encontrado com ${condition}`)
                     } else {
                         if(onlyFirst == true || onlyFirst == undefined){
-                            resolve(resultado[0])
+                            resolve({
+                                ...resultado[0],
+                                related_categories: resultado[0].related_categories? resultado[0].related_categories.split(',').map((str: string) => { return parseInt(str) }) : []
+                            })
                         } else {
+                            const result = resultado.map((result: any) => {
+                                return {
+                                    ...result,
+                                    related_categories: result.related_categories? result.related_categories.split(',').map((str: string) => { return parseInt(str) }) : []
+                                }
+                            })
                             resolve(resultado)
                         }
                     }
@@ -201,6 +216,28 @@ class Product {
         })
     }
 
+    async deleteProduct(condition: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+            
+            const sql = `DELETE produtos WHERE ${condition}`
+
+            Connect.query(sql, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao excluir no banco de dados com a condição: ${condition}`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
+    // pricing
+
     async getPricing<T extends OnlyFirst>(id: PricingIdentifierType, onlyFirst?: T, storeId?: number): Promise<PricingType<T>>{
         return new Promise(async(resolve, reject) => {
 
@@ -211,7 +248,7 @@ class Product {
 
             const condition = `${id.tray_pricing_id? 'tray_pricing_id' : 'hub_id'} = ${id.tray_pricing_id? id.tray_pricing_id : id.hub_id}`
 
-            const storeCondition = `${storeId? 'and store_id' : '' } = ${storeId? storeId : ''}`
+            const storeCondition = `${storeId? 'and store_id = ' : '' }${storeId? storeId : ''}`
 
             const sql = `SELECT * FROM tray_produtos WHERE ${condition} ${storeCondition} ORDER BY tray_pricing_id ASC`
 
@@ -310,7 +347,30 @@ class Product {
         })
     }
 
-    async getKitRules<T extends OnlyFirst>(id: KitRulesIdentifierType, onlyFirst?: T, storeId?: number): Promise<PricingType<T>>{
+    async deletePricing(condition: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+            
+            
+            const sql = `DELETE tray_produtos WHERE ${condition}`
+
+            Connect.query(sql, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao excluir no banco de dados com a condição: ${condition}`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
+    // rules
+
+    async getKitRules<T extends OnlyFirst>(id: KitRulesIdentifierType, onlyFirst?: T, storeId?: number): Promise<KitRulesType<T>>{
         return new Promise(async(resolve, reject) => {
 
             if(!id.hub_id && !id.tray_pricing_id){
@@ -321,7 +381,7 @@ class Product {
             const condition = `${id.hub_rules_id? 'tray_rules_id' : id.tray_pricing_id? 'tray_pricing_id' : 'hub_id' } =
             ${id.hub_rules_id? id.hub_rules_id : id.tray_pricing_id? id.tray_pricing_id : id.hub_id }`
 
-            const storeCondition = `${storeId? 'and store_id' : '' } = ${storeId? storeId : ''}`
+            const storeCondition = `${storeId? 'and store_id = ' : '' }${storeId? storeId : ''}`
 
             const sql = `SELECT * FROM produtos_kits WHERE ${condition} ${storeCondition} ORDER BY hub_rules_id ASC`
 
@@ -374,7 +434,6 @@ class Product {
         })
     }
 
-    
     async updateKitRules(kitRules: IKitRulesUpdate, condition: string): Promise<void>{
         return new Promise(async(resolve, reject) => {
             
@@ -400,6 +459,27 @@ class Product {
                 if (erro) {
                     console.log(erro)
                     reject(`erro ao atualizar no banco de dados hubId ${kitRules?.hub_id} com a condição: ${condition}`)
+                } else {
+                    if(resultado.affectedRows > 0){
+                        resolve()
+                    } else {
+                        reject('nenhuma linha foi econtrada com essas condições')
+                    }
+                }
+            })
+        })
+    }
+
+    async deleteKitRules(condition: string): Promise<void>{
+        return new Promise(async(resolve, reject) => {
+            
+            
+            const sql = `DELETE produtos_kits WHERE ${condition}`
+
+            Connect.query(sql, (erro, resultado) => {
+                if (erro) {
+                    console.log(erro)
+                    reject(`erro ao excluir no banco de dados com a condição: ${condition}`)
                 } else {
                     if(resultado.affectedRows > 0){
                         resolve()

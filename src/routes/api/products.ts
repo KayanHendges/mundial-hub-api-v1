@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Create from '../../controllers/Products/Create';
+import Delete from '../../controllers/Products/Delete';
 import Edit from '../../controllers/Products/Edit';
 import List from '../../controllers/Products/List';
 import Page from '../../controllers/Products/Page';
@@ -23,7 +24,8 @@ const productsRoutes = Router();
 
     // get
 
-    productsRoutes.get('/product/unitary', List.unitary)
+    productsRoutes.get('/products/unitary/:reference', List.unitary)
+    productsRoutes.get('/products/kits/:reference', List.kits)
  
     // create 
     productsRoutes.post('/products/create/unitary', Create.unitary)
@@ -34,8 +36,17 @@ const productsRoutes = Router();
     productsRoutes.post('/products/create/kit-tray', Create.kitTray)
 
     // edit 
-    productsRoutes.post('/product/edit/unitary', Edit.unitary)
+    productsRoutes.post('/products/edit/unitary', Edit.unitary)
+    productsRoutes.post('/products/edit/pricing', Edit.pricing)
+    productsRoutes.post('/products/edit/pricing/kit', Edit.kitPricingRules)
 
-    // productsRoutes.get('/products/delete-tray', List.deleteNoStockTray)
+    productsRoutes.post('/products/edit/unitary-tray', Edit.unitaryTray)
+    productsRoutes.post('/products/edit/kit-tray', Edit.kitTray)
+
+    // delete
+    productsRoutes.delete('/products/delete/kit', Delete.kit)
+
+    productsRoutes.delete('/products/delete/unitary-unitary', Delete.unitaryTray)
+    productsRoutes.delete('/products/delete/kit-unitary', Delete.kitTray)
             
 export default productsRoutes;

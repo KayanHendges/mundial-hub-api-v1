@@ -1,9 +1,21 @@
 import axios from "axios";
-import { Response } from "express";
+import { response, Response } from "express";
 import Connect from "../../database/Connect";
 import ProductDataBase from "../../services/Products/ProductDataBase";
+import { IKitRules, IPricing, IProduct } from "../../types/product";
 import OAuth2Tray from "../Auth/OAuth2Tray";
 import Requests from "../Tray/Requests";
+
+interface IUnitaryResponse {
+    details: IProduct,
+    pricing: IPricing[]
+}
+
+interface IKitResponse {
+    details: IProduct,
+    pricing: IPricing[] | [],
+    rules: IKitRules[] | []
+}
 
 interface IProductsList {
     hubId: number;
@@ -15,15 +27,91 @@ interface IList {
 
 class List implements IList {
 
-    async unitary(reference: string){
+    async unitary(reference: string): Promise<IUnitaryResponse>{
         return new Promise(async(resolve, reject) => {
 
             const details = await ProductDataBase.getProduct({reference: reference}, true)
-            const arrayPricing = ProductDataBase.getPricing({ hub_id: details.hub_id }, false)
-            
-            const mundialPricing = arrayPricing.map( pricing => {
+            .catch(erro => {
+                reject(erro)
+                return null
+            })
+
+            if(details){
+                const arrayPricing = await ProductDataBase.getPricing({ hub_id: details.hub_id }, false)
+                .catch(erro => {
+                    reject(erro)
+                })
                 
-            } )
+                if(arrayPricing){
+                    resolve({
+                        details,
+                        pricing: arrayPricing
+                    })
+                } else {
+                    resolve({
+                        details,
+                        pricing: []
+                    })
+                }
+
+            } else {
+                return
+            }
+        })
+    }
+
+    async kits(reference: string): Promise<IKitResponse[]>{
+        return new Promise(async(resolve, reject) => {
+
+            const kitsDetails = await ProductDataBase.getProduct({reference: reference}, false, true)
+            .catch(erro => {
+                reject(erro)
+                return null
+            })
+
+            if(kitsDetails){
+                
+                const kits: IKitResponse[] = []
+
+                await loop(kitsDetails, 0)
+                
+                resolve(kits)
+
+                function loop(list: IProduct[], index: number):Promise<void>{
+                    return new Promise(async(resolve) => {
+                        if(list.length > index){
+    
+                            kits.push(await getKitPricingAndRules(list[index]))
+
+                            resolve(loop(list, index+1))
+    
+                        } else {
+                            resolve()
+                        }
+                    })
+                }
+    
+                function getKitPricingAndRules(kit: IProduct): Promise<IKitResponse>{
+                    return new Promise(async(resolve, reject) => {
+                        
+                        resolve({
+                            details: kit,
+                            pricing: await ProductDataBase.getPricing({hub_id: kit.hub_id}, false)
+                            .catch(erro => {
+                                return []
+                            }),
+                            rules: await ProductDataBase.getKitRules({hub_id: kit.hub_id}, false)
+                            .catch(erro => {
+                                return []
+                            })
+                        })
+    
+                    })
+                }
+            } else {
+                return
+            }
+
         })
     }
 

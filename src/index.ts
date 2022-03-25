@@ -7,8 +7,6 @@ import { addHours, format } from 'date-fns';
 import bodyParser from 'body-parser';
 import Routines from './models/Routines/Routines';
 
-const app = express();
-
 Connect.query('SELECT * FROM credenciais_tray', async(erro) => {
     if(erro){
         console.log(erro)
@@ -31,5 +29,3 @@ Connect.query('SELECT * FROM credenciais_tray', async(erro) => {
         Routines.startRoutine()
     }
 })
-
-app.listen(3333);

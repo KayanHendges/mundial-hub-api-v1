@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model categorias {
+  hub_category_id                 Int       @id @default(autoincrement())
+  store_id                        Decimal   @db.Decimal(9, 0)
+  tray_adm_user                   String    @db.VarChar(32)
+  tray_category_id                Int?
+  tray_scpneus_category_id        Int?
+  category_name                   String    @db.VarChar(255)
+  category_description            String?   @default("") @db.VarChar(500)
+  category_slug                   String    @default("") @db.VarChar(255)
+  order_list                      Int
+  category_title                  String?   @default("") @db.VarChar(255)
+  category_small_description      String?   @default("") @db.VarChar(500)
+  has_acceptance_term             String?   @db.VarChar(1)
+  acceptance_term                 String?   @db.Text
+  category_meta_key               String?   @default("") @db.VarChar(255)
+  category_meta_desc              String?   @default("") @db.VarChar(255)
+  property                        String?   @db.Text
+  http_image                      String?   @db.Text
+  https_image                     String?   @db.Text
+  http_link                       String?   @db.Text
+  https_link                      String?   @db.Text
+  tray_category_parent_id         Int?
+  tray_scpneus_category_parent_id Int?
+  creation_date                   DateTime? @db.DateTime(0)
+}
+
+model credenciais_tray {
+  credential_id                 Int     @id @default(autoincrement())
+  consumer_key                  String? @default("") @db.VarChar(64)
+  consumer_secret               String? @db.VarChar(64)
+  code                          String? @default("") @db.VarChar(64)
+  tray_adm_user                 String? @default("") @db.VarChar(32)
+  store                         String? @default("") @db.VarChar(16)
+  api_address                   String? @default("") @db.VarChar(200)
+  store_host                    String? @default("") @db.VarChar(200)
+  access_token                  String? @default("") @db.VarChar(128)
+  refresh_token                 String? @default("") @db.VarChar(128)
+  date_expiration_access_token  String? @db.VarChar(32)
+  date_expiration_refresh_token String? @db.VarChar(32)
+  date_activated                String? @db.VarChar(32)
+}
+
+model errors_product_edit {
+  error_id    Int       @id @default(autoincrement())
+  query_error String?   @db.Text
+  error_tray  String?   @db.Text
+  time_error  DateTime? @db.DateTime(0)
+}
+
+model produtos {
+  hub_id                    Int             @id @default(autoincrement())
+  ean                       String          @default("") @db.VarChar(120)
+  modified                  DateTime?       @db.DateTime(0)
+  is_kit                    Int
+  reference                 String          @db.VarChar(120)
+  product_slug              String?         @default("") @db.VarChar(200)
+  ncm                       String?         @default("") @db.VarChar(12)
+  product_name              String          @default("") @db.VarChar(200)
+  product_title             String?         @default("") @db.VarChar(200)
+  product_small_description String?         @default("") @db.VarChar(500)
+  product_description       String?         @default("") @db.VarChar(4800)
+  brand                     String?         @default("") @db.VarChar(120)
+  model                     String?         @default("") @db.VarChar(120)
+  weight                    Int             @default(0)
+  length                    Int             @default(0)
+  width                     Int             @default(0)
+  height                    Int             @default(0)
+  main_category_id          Int?
+  related_categories        String?         @default("") @db.VarChar(64)
+  available                 Int             @default(0)
+  availability              String?         @db.Text
+  availability_days         Int?
+  warranty                  String?         @db.VarChar(256)
+  release_date              DateTime?       @db.Date
+  picture_source_1          String?         @default("") @db.VarChar(200)
+  picture_source_1_90       String?         @default("") @db.VarChar(200)
+  picture_source_2          String?         @default("") @db.VarChar(200)
+  picture_source_2_90       String?         @default("") @db.VarChar(200)
+  picture_source_3          String?         @default("") @db.VarChar(200)
+  picture_source_3_90       String?         @default("") @db.VarChar(200)
+  picture_source_4          String?         @default("") @db.VarChar(200)
+  picture_source_4_90       String?         @default("") @db.VarChar(200)
+  picture_source_5          String?         @default("") @db.VarChar(200)
+  picture_source_5_90       String?         @default("") @db.VarChar(200)
+  picture_source_6          String?         @default("") @db.VarChar(200)
+  picture_source_6_90       String?         @default("") @db.VarChar(200)
+  metatag                   String?         @db.Text
+  type                      String?         @db.Text
+  content                   String?         @db.Text
+  local                     String?         @db.Text
+  virtual_product           Int
+  creation_date             DateTime        @db.DateTime(0)
+  comments                  String?         @db.Text
+  produtos_kits             produtos_kits[]
+  tray_produtos             tray_produtos[]
+}
+
+model produtos_kits {
+  hub_rules_id           Int           @id @default(autoincrement())
+  tray_rule_id           Int?
+  tray_pricing_id        Int
+  tray_product_id        Int?
+  hub_id                 Int?
+  tray_product_parent_id Int
+  kit_price              Float?        @default(0) @db.Float
+  quantity               Int?
+  price_rule             Int?
+  discount_type          String?       @db.VarChar(1)
+  discount_value         Float?        @db.Float
+  modified               DateTime?     @db.DateTime(0)
+  creation_date          DateTime?     @db.DateTime(0)
+  produtos               produtos?     @relation(fields: [hub_id], references: [hub_id], onDelete: Restrict, onUpdate: Restrict, map: "produtos_kits_ibfk_1")
+  tray_produtos          tray_produtos @relation(fields: [tray_pricing_id], references: [tray_pricing_id], onUpdate: Restrict, map: "produtos_kits_ibfk_2")
+
+  @@index([hub_id], map: "hub_id")
+  @@index([tray_pricing_id], map: "tray_pricing_id")
+}
+
+model providers {
+  provider_id    Int     @id @default(autoincrement())
+  provider_name  String? @db.VarChar(120)
+  standart_costs Float?  @db.Float
+  cost_type      String? @db.VarChar(1)
+}
+
+model providers_products {
+  provider_product_id Int      @id @default(autoincrement())
+  provider_id         Int?
+  product_reference   Int?
+  hub_id              Int?
+  product_name        String?  @db.VarChar(200)
+  product_brand       String?  @db.VarChar(64)
+  product_stock       Int?
+  product_price       Float?   @db.Float
+  additional_costs    String?  @db.VarChar(200)
+  need_create         Int?     @default(0)
+  ignore_product      Int?     @default(0)
+  last_update         DateTime @db.DateTime(0)
+
+  @@index([hub_id], map: "hub_id")
+  @@index([provider_id], map: "provider_id")
+}
+
+model requisi__es_tray {
+  request_id Int       @id @default(autoincrement())
+  query      String?   @db.VarChar(256)
+  query_time DateTime? @db.DateTime(0)
+
+  @@map("requisições_tray")
+}
+
+model tray_produtos {
+  tray_pricing_id         Int             @id @default(autoincrement())
+  tray_adm_user           String          @db.VarChar(32)
+  tray_store_id           Int?
+  hub_id                  Int?
+  tray_product_id         Int
+  is_kit                  Int
+  cost_price              Float?          @default(0) @db.Float
+  profit                  Float?          @default(0) @db.Float
+  tray_price              Float?          @default(0) @db.Float
+  tray_promotional_price  Float?          @default(0) @db.Float
+  start_promotion         DateTime?       @db.DateTime(0)
+  end_promotion           DateTime?       @db.DateTime(0)
+  tray_stock              Int?            @default(0)
+  tray_minimum_stock      Int?
+  tray_main_category_id   Int?
+  tray_related_categories String?         @default("") @db.VarChar(64)
+  modified                DateTime?       @db.DateTime(0)
+  produtos                produtos?       @relation(fields: [hub_id], references: [hub_id], onDelete: Restrict, onUpdate: Restrict, map: "tray_produtos_ibfk_1")
+  produtos_kits           produtos_kits[]
+
+  @@index([hub_id], map: "hub_id")
+}
+
+model users {
+  user_id       Int       @id @default(autoincrement())
+  name          String?   @db.VarChar(48)
+  username      String    @db.VarChar(48)
+  password      String    @db.VarChar(120)
+  refresh_token String?   @db.Text
+  expires_in    DateTime? @db.DateTime(0)
+}
