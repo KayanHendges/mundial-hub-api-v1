@@ -36,9 +36,11 @@ export default {
     
     const { body } = req
 
-    if(body.pricing && body.tray_pricing_id_id && body.store_id){
+    console.log(body)
+
+    if(body.pricing && body.tray_pricing_id && body.store_id){
         
-        await EditProduct.pricing(body.product, body.tray_pricing_id_id, body.store_id)
+        await EditProduct.pricing(body.pricing, body.tray_pricing_id, body.store_id)
         .then(response => {
             res.status(201).json({
                 code: 201,

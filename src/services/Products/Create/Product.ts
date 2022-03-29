@@ -42,7 +42,7 @@ class CreateProduct {
     }
 
     async createKitPricingRules(unitaryPricing: IPricingInput, kitRules: IRulesInput, storeId: number): 
-    Promise<{ pricing_id: number, rule_id: number  }>{
+    Promise<{ pricing_id: number, rules_id: number  }>{
         return new Promise(async(resolve, reject) => {
             const storeCredentials = OAuth2Tray.getStoreCredentials(storeId)
     
@@ -72,7 +72,7 @@ class CreateProduct {
 
             resolve({
                 pricing_id: pricingId,
-                rule_id: ruleId
+                rules_id: ruleId
             })
         })
 

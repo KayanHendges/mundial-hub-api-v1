@@ -197,7 +197,7 @@ class Product {
 
             this.removeUndefined(sqlProduct)
 
-            const where = `WHERE hub_id=${product.hub_id}${condition? ' and ' : '' }${condition}`
+            const where = `WHERE hub_id=${product.hub_id}${condition? ' and ' : '' }${condition? condition : ''}`
 
             const sql = `UPDATE produtos SET ? ${where}`
 

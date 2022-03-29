@@ -46,7 +46,7 @@ const productsRoutes = Router();
     // delete
     productsRoutes.delete('/products/delete/kit', Delete.kit)
 
-    productsRoutes.delete('/products/delete/unitary-unitary', Delete.unitaryTray)
-    productsRoutes.delete('/products/delete/kit-unitary', Delete.kitTray)
+    productsRoutes.delete('/products/delete/unitary-tray', Delete.unitaryTray)
+    productsRoutes.delete('/products/delete/kit-tray', Delete.kitTray)
             
 export default productsRoutes;

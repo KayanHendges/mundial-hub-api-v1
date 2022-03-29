@@ -11,7 +11,7 @@ class EditProduct {
         return new Promise(async(resolve, reject) => {
             const unitary = await Validate.hubProduct(values)
 
-            await ProductDataBase.updateProduct({...unitary, hub_id: hubId})
+            await ProductDataBase.updateProduct({...unitary, hub_id: hubId},)
             .then( response => {
                 resolve()
             })

@@ -68,7 +68,7 @@ export default {
         .then(response => {
             res.status(201).json({
                 code: 201,
-                rule_id: response.rule_id,
+                rules_id: response.rules_id,
                 pricing_id: response.pricing_id,
                 message: 'Pricing e Rule do kit criado com sucesso'
             })
