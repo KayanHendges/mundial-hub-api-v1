@@ -126,6 +126,7 @@ class Delete {
                     if(list.length > index){
                         await TrayProducts.delete(await storeCredentials, list[index])
                         await ProductDataBase.updatePricing({tray_product_id: 0}, `tray_product_id = ${list[index]} AND tray_store_i = ${storeId}`)
+                        await ProductDataBase.updateKitRules({tray_product_id: 0}, `tray_product_id = ${list[index]} AND tray_store_i = ${storeId}`)
                         await ProductDataBase.updateKitRules({tray_product_parent_id: 0}, `tray_product_parent_id = ${list[index]} AND tray_store_i = ${storeId}`)
                         setTimeout(() => {
                             resolve(deleteTrayloop(list, index+1))

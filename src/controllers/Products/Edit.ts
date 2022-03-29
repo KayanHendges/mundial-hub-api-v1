@@ -35,9 +35,7 @@ export default {
   async pricing(req: Request, res: Response){
     
     const { body } = req
-
-    console.log(body)
-
+    
     if(body.pricing && body.tray_pricing_id && body.store_id){
         
         await EditProduct.pricing(body.pricing, body.tray_pricing_id, body.store_id)

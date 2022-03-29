@@ -27,7 +27,7 @@ class EditProduct {
 
             const pricing = await Validate.createPricing(values, storeId)
             
-            await ProductDataBase.updatePricing(pricing, `tray_pricing_id = ${trayPricingId}`)
+            await ProductDataBase.updatePricing({...pricing, tray_product_id: undefined}, `tray_pricing_id = ${trayPricingId}`)
             .then(response => {
                 resolve()
             })
@@ -42,7 +42,7 @@ class EditProduct {
 
             const validatedPricing = Validate.createKitPricing(pricing, kitRules)
 
-            const updatedPricing = ProductDataBase.updatePricing(await validatedPricing, `tray_pricing_id = ${trayPricingId}`)
+            const updatedPricing = ProductDataBase.updatePricing({...await validatedPricing, tray_product_id: undefined}, `tray_pricing_id = ${trayPricingId}`)
             .then(response => {return true})
             .catch(erro => {
                 reject(erro)
