@@ -92,7 +92,7 @@ export default {
 
     if(body.details && body.pricing && body.tray_id && body.store_id){
         
-        await EditProduct.unitaryTray(body.detaills, body.pricing, body.tray_id, body.store_id)
+        await EditProduct.unitaryTray(body.details, body.pricing, body.tray_id, body.store_id)
         .then(response => {
             res.status(201).json({
                 code: 201,

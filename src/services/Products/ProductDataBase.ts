@@ -248,7 +248,7 @@ class Product {
 
             const condition = `${id.tray_pricing_id? 'tray_pricing_id' : 'hub_id'} = ${id.tray_pricing_id? id.tray_pricing_id : id.hub_id}`
 
-            const storeCondition = `${storeId? 'and store_id = ' : '' }${storeId? storeId : ''}`
+            const storeCondition = `${storeId? 'and tray_store_id = ' : '' }${storeId? storeId : ''}`
 
             const sql = `SELECT * FROM tray_produtos WHERE ${condition} ${storeCondition} ORDER BY tray_pricing_id ASC`
 
@@ -370,7 +370,7 @@ class Product {
 
     // rules
 
-    async getKitRules<T extends OnlyFirst>(id: KitRulesIdentifierType, onlyFirst?: T, storeId?: number): Promise<KitRulesType<T>>{
+    async getKitRules<T extends OnlyFirst>(id: KitRulesIdentifierType, onlyFirst?: T): Promise<KitRulesType<T>>{
         return new Promise(async(resolve, reject) => {
 
             if(!id.hub_id && !id.tray_pricing_id){
@@ -381,9 +381,7 @@ class Product {
             const condition = `${id.hub_rules_id? 'tray_rules_id' : id.tray_pricing_id? 'tray_pricing_id' : 'hub_id' } =
             ${id.hub_rules_id? id.hub_rules_id : id.tray_pricing_id? id.tray_pricing_id : id.hub_id }`
 
-            const storeCondition = `${storeId? 'and store_id = ' : '' }${storeId? storeId : ''}`
-
-            const sql = `SELECT * FROM produtos_kits WHERE ${condition} ${storeCondition} ORDER BY hub_rules_id ASC`
+            const sql = `SELECT * FROM produtos_kits WHERE ${condition} ORDER BY hub_rules_id ASC`
 
             Connect.query(sql, (erro, resultado) => {
                 if(erro){

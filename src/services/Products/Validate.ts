@@ -29,6 +29,7 @@ export interface IDetailsInput {
 
 export interface IPricingInput {
     tray_product_id?: number;
+    tray_pricing_id?: number;
     cost: number,
     profit: number,
     price: number,
@@ -421,6 +422,9 @@ class Validate {
     }
 
     async hubProduct(product: IDetailsInput){
+
+        const getImages = product.images != undefined? true : false 
+
         return {
             is_kit: this.toInteger(product.is_kit),
             ean: this.toEmptyString(product.ean),
@@ -439,12 +443,12 @@ class Validate {
             availability: this.toEmptyString(product.availability),
             availability_days: this.toInteger(product.availabilityDays),
             reference: this.toEmptyString(product.reference),
-            picture_source_1: this.toEmptyString(product.images[0].imageUrl),
-            picture_source_2: this.toEmptyString(product.images[1].imageUrl),
-            picture_source_3: this.toEmptyString(product.images[2].imageUrl),
-            picture_source_4: this.toEmptyString(product.images[3].imageUrl),
-            picture_source_5: this.toEmptyString(product.images[4].imageUrl),
-            picture_source_6: this.toEmptyString(product.images[5].imageUrl),
+            picture_source_1: getImages? this.toEmptyString(product.images[0].imageUrl) : undefined,
+            picture_source_2: getImages? this.toEmptyString(product.images[1].imageUrl) : undefined,
+            picture_source_3: getImages? this.toEmptyString(product.images[2].imageUrl) : undefined,
+            picture_source_4: getImages? this.toEmptyString(product.images[3].imageUrl) : undefined,
+            picture_source_5: getImages? this.toEmptyString(product.images[4].imageUrl) : undefined,
+            picture_source_6: getImages? this.toEmptyString(product.images[5].imageUrl) : undefined,
             warranty: this.toEmptyString(product.warranty),
             virtual_product: 0,
             content: this.toEmptyString(product.product_name),
@@ -582,6 +586,9 @@ class Validate {
     }
 
     toEmptyString(str: string): string{
+        if(str){
+            
+        }
         if(str != undefined) {
 
             if(str == null){

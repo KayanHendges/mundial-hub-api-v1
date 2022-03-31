@@ -97,7 +97,7 @@ class TrayProducts {
         return new Promise(async(resolve, reject) => {
 
             const productObj = {
-                is_kit: 0,
+                is_kit: product.is_kit,
                 ean: product.ean,
                 name: product.product_name,
                 ncm: product.ncm,
@@ -113,7 +113,7 @@ class TrayProducts {
                 length: product.length,
                 width: product.width,
                 height: product.height,
-                stock: product.tray_stock,
+                stock: product.is_kit == 0? product.tray_stock : undefined,
                 minimum_stock: product.tray_minimum_stock,
                 minimum_stock_alert: '1',
                 category_id: product.tray_main_category_id,
@@ -184,8 +184,6 @@ class TrayProducts {
 
     async createKit(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
-
-            console.log(product)
 
             const productObj = {
                 Product: {
@@ -339,6 +337,7 @@ class TrayProducts {
                 resolve()
             })
             .catch(erro => {
+                console.log(erro.response.data, query, trayRules)
                 if(erro.response.data.causes != undefined){
                     console.log(erro.response.data.causes)
                     reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`)

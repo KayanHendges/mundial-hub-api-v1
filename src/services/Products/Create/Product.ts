@@ -2,6 +2,7 @@ import { response, Response } from "express"
 import OAuth2Tray from "../../../models/Auth/OAuth2Tray"
 import TrayProducts from "../../Tray/TrayProducts"
 import ProductDataBase from "../ProductDataBase"
+import { IProductInsert } from "../../../types/product"
 import Validate, { IPricingInput, IDetailsInput, IProductKitInput, IRulesInput } from "../Validate"
 
 type HubIdResponse = number;
@@ -12,7 +13,7 @@ class CreateProduct {
         return new Promise(async(resolve, reject) => {
             const unitary = await Validate.hubProduct(values)
 
-            await ProductDataBase.insert(unitary)
+            await ProductDataBase.insert(unitary as IProductInsert)
             .then( response => {
                 resolve(response)
             })

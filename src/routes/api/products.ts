@@ -44,9 +44,9 @@ const productsRoutes = Router();
     productsRoutes.post('/products/edit/kit-tray', Edit.kitTray)
 
     // delete
-    productsRoutes.delete('/products/delete/kit', Delete.kit)
+    productsRoutes.post('/products/delete/kit', Delete.kit)
 
-    productsRoutes.delete('/products/delete/unitary-tray', Delete.unitaryTray)
-    productsRoutes.delete('/products/delete/kit-tray', Delete.kitTray)
+    productsRoutes.post('/products/delete/unitary-tray', Delete.unitaryTray)
+    productsRoutes.post('/products/delete/kit-tray', Delete.kitTray)
             
 export default productsRoutes;

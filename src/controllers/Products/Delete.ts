@@ -56,7 +56,7 @@ export default {
         } else {
             res.status(400).json({
                 code: 400,
-                message: 'está faltando o hub_id'
+                message: 'está faltando a referencia'
             })
         }
     },
@@ -64,6 +64,8 @@ export default {
     async kitTray(req: Request, res: Response){
 
         const { body } = req
+
+        console.log(body)
     
         if(body.tray_pricing_id && body.store_id){
             
@@ -84,7 +86,7 @@ export default {
         } else {
             res.status(400).json({
                 code: 400,
-                message: 'está faltando o hub_id'
+                message: 'está faltando o tray_pricing_id'
             })
         }
     },

@@ -89,15 +89,37 @@ class EditProduct {
             const product = Validate.hubProduct(details)
             const productPricing = Validate.createKitPricing(pricing, rules)
 
-            const updatedProduct = TrayProducts.updateProduct(await storeCredentials, {...await product, ...await productPricing}, (await productPricing).tray_product_id)
+            await Promise.all([storeCredentials, product, productPricing])
+
+            const trayProductId = await productPricing
+
+            const updatedProduct = TrayProducts.updateProduct(await storeCredentials, {...await product, ...await productPricing}, trayProductId.tray_product_id)
             .then( response => {
                 return true
             })
             .catch(erro => {
                 return erro
             })
+
+            const childrenTrayId = await ProductDataBase.getKitRules({tray_pricing_id: pricing.tray_pricing_id}, true)
+            .then(response => {
+                return response.tray_product_id
+            })
+            .catch(erro => {
+                reject(erro)
+                return null
+            })
             
-            const updatedRules = TrayProducts.updateKitRules(await storeCredentials, rules)
+            if(childrenTrayId == null){
+                return
+            } else {
+                
+            }
+            const updatedRules = TrayProducts.updateKitRules(await storeCredentials, {
+                ...rules,
+                tray_product_parent_id: trayProductId.tray_product_id,
+                tray_product_id: childrenTrayId
+            })
             .then( response => {
                 return true
             })
@@ -110,6 +132,7 @@ class EditProduct {
             } else {
                 reject(`product = ${updatedProduct}, rules: ${updatedRules}`)
             }
+
         })
 
     }

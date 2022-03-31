@@ -119,9 +119,6 @@ export default {
     
     const { body } = req
 
-    console.log('---------------------------------------------')
-    console.log(body)
-
     if(body.product && body.pricing && body.rules && body.tray_pricing_id && body.store_id && body.rules.tray_product_id > 0){
         
         await CreateProduct.createTrayKit(body.product, body.pricing, body.rules, body.tray_pricing_id, body.store_id)

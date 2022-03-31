@@ -143,8 +143,15 @@ class Delete {
         return new Promise(async(resolve, reject) => {
             
             const storeCredentials = OAuth2Tray.getStoreCredentials(storeId)
-            const {tray_product_id} = await ProductDataBase.getPricing({tray_pricing_id: trayPricingId}, true, storeId)
-            const trayDelete = await TrayProducts.delete(await storeCredentials, tray_product_id as number)
+            const pricingDb = await ProductDataBase.getPricing({tray_pricing_id: trayPricingId}, true, storeId)
+            .catch(erro => {
+                reject(erro) 
+                return null
+            })
+            if(pricingDb == null){
+                return
+            }
+            const trayDelete = await TrayProducts.delete(await storeCredentials, pricingDb.tray_product_id as number)
             .then(response => {
                 return true
             })

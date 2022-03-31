@@ -22,16 +22,17 @@ export interface IProductPostUnitary {
     availability_days: number;
     reference: string;
     tray_related_categories: number[];
-    picture_source_1: string;
-    picture_source_2: string;
-    picture_source_3: string;
-    picture_source_4: string;
-    picture_source_5: string;
-    picture_source_6: string;
+    picture_source_1: string | undefined;
+    picture_source_2: string | undefined;
+    picture_source_3: string | undefined;
+    picture_source_4: string | undefined;
+    picture_source_5: string | undefined;
+    picture_source_6: string | undefined;
     warranty: string;
 }
 
 export interface IProductPutUnitary {
+    is_kit: number;
     ean?: string;
     product_name?: string;
     ncm?: string;
@@ -74,8 +75,8 @@ export interface IProductKitRule {
 }
 
 export interface IProductKitPutRule {
-    tray_product_parent_id?: number,
-    tray_product_id?: number,
+    tray_product_parent_id: number,
+    tray_product_id: number,
     quantity?: number,
     discount_type?: string,
     discount_value?: number,
