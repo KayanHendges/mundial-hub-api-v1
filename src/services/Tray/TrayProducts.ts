@@ -4,7 +4,7 @@ import Requests from "../../models/Tray/Requests"
 import { IProductKitPutRule, IProductKitRule, IProductPostUnitary, IProductPutUnitary } from "../../types/tray"
 
 
-interface IStore {
+export interface IStore {
     tray_adm_user: string;
     store: string;
     api_address: string;

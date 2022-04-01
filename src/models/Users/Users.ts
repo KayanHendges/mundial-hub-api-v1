@@ -1,5 +1,7 @@
+import axios from "axios";
 import { Response } from "express";
 import Connect from "../../database/Connect";
+import TrayProducts, { IStore } from "../../services/Tray/TrayProducts";
 import OAuth2Tray from "../Auth/OAuth2Tray";
 
 class Users {
@@ -34,15 +36,44 @@ class Users {
     async getProductsAmount(storeId: number): Promise<{total: number}>{
         return new Promise(async(resolve, reject) => {
 
-            const getCredentialsTray = OAuth2Tray.getStoreCredentials(storeId)
+            const trayCredentials = await OAuth2Tray.getStoreCredentials(storeId)
             .catch(erro => {
                 reject(erro)
                 return null
             })
 
-            if(getCredentialsTray == null){return}
+            if(trayCredentials == null){return}
 
-            
+            const totalProducts = await getTrayProductsAmount(trayCredentials)
+
+            resolve({
+                total: totalProducts
+            })
+
+            async function getTrayProductsAmount(storeCredentials: IStore): Promise<number>{
+                return new Promise(async(resolve, reject) => {
+                    
+                    const query = `${storeCredentials.api_address}/products/`
+
+                    axios.get(query)
+                    .then(response => {
+                        const responseTray = response.data
+                        if(responseTray?.paging?.total){
+                            resolve(responseTray.paging.total)
+                        } else {
+                            reject('tray não retornou o total de produtos')
+                        }
+                    })
+                    .catch(erro => {
+                        if(erro.response.data.causes){
+                            reject(JSON.stringify(erro.response.data.causes))
+                        } else {
+                            Error(erro)
+                            reject('erro ao fazer a requisição a Tray')
+                        }
+                    })
+                })
+            }
         })
     }
 }
