@@ -1,5 +1,6 @@
 import { Response } from "express";
 import Connect from "../../database/Connect";
+import OAuth2Tray from "../Auth/OAuth2Tray";
 
 class Users {
 
@@ -30,6 +31,20 @@ class Users {
 
     }
 
+    async getProductsAmount(storeId: number): Promise<{total: number}>{
+        return new Promise(async(resolve, reject) => {
+
+            const getCredentialsTray = OAuth2Tray.getStoreCredentials(storeId)
+            .catch(erro => {
+                reject(erro)
+                return null
+            })
+
+            if(getCredentialsTray == null){return}
+
+            
+        })
+    }
 }
 
-export default Users
+export default new Users

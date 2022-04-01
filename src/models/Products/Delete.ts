@@ -94,7 +94,10 @@ class Delete {
             })
             if(hubIdList == false){return}
 
+
             const trayIdList = await getTrayId(hubIdList as number[], storeId)
+            
+            trayIdList.sort((a, b) => {return b-a})
 
             await deleteTrayloop(trayIdList, 0)
 
@@ -103,13 +106,12 @@ class Delete {
             async function getTrayId(hubIdList: number[], storeId: number): Promise<number[]>{
                 return new Promise(async(resolve, reject) => {
 
-                    const sql = `SELECT tray_product_id 
-                    WHERE hub_id IN (${hubIdList.join(',')}) AND tray_store_id = ${storeId}
+                    const sql = `SELECT tray_product_id FROM tray_produtos
+                    WHERE hub_id IN (${hubIdList.join(',')}) AND tray_store_id = ${storeId} AND tray_product_id > 0
                     ORDER BY tray_product_id ASC`
 
                     Connect.query(sql, (erro, resultado) => {
                         if ( erro ){
-                            console.log(erro)
                             resolve([])
                         } else {
                             const list = resultado?.map((result: any) => {
@@ -125,9 +127,12 @@ class Delete {
                 return new Promise(async(resolve, reject) => {
                     if(list.length > index){
                         await TrayProducts.delete(await storeCredentials, list[index])
-                        await ProductDataBase.updatePricing({tray_product_id: 0}, `tray_product_id = ${list[index]} AND tray_store_i = ${storeId}`)
-                        await ProductDataBase.updateKitRules({tray_product_id: 0}, `tray_product_id = ${list[index]} AND tray_store_i = ${storeId}`)
-                        await ProductDataBase.updateKitRules({tray_product_parent_id: 0}, `tray_product_parent_id = ${list[index]} AND tray_store_i = ${storeId}`)
+                        await ProductDataBase.updatePricing({tray_product_id: 0}, `tray_product_id = ${list[index]} AND tray_store_id = ${storeId}`)
+                        .catch(erro => {console.log(erro)})
+                        await ProductDataBase.updateKitRules({tray_product_id: 0}, `tray_product_id = ${list[index]}`)
+                        .catch(erro => {console.log(erro)})
+                        await ProductDataBase.updateKitRules({tray_product_parent_id: 0}, `tray_product_parent_id = ${list[index]}`)
+                        .catch(erro => {console.log(erro)})
                         setTimeout(() => {
                             resolve(deleteTrayloop(list, index+1))
                         }, 300) 

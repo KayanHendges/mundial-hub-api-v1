@@ -121,8 +121,13 @@ class OAuth2Tray {
             Connect.query(sql, (erro, resultado) => {
                 if(erro){
                     console.log(erro)
+                    reject('erro ao encontrar as credenciais no banco de dados')
                 } else {
-                    resolve(resultado[0])
+                    if(resultado.length > 0){
+                        resolve(resultado[0])
+                    } else {
+                        reject(`nenhuma credencial com o store_id ${storeId}`)
+                    }
                 }
             })
         })

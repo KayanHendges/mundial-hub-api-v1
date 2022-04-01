@@ -4,6 +4,8 @@ import TrayProducts from "../../Tray/TrayProducts"
 import ProductDataBase from "../ProductDataBase"
 import { IProductInsert } from "../../../types/product"
 import Validate, { IPricingInput, IDetailsInput, IProductKitInput, IRulesInput } from "../Validate"
+import Connect from "../../../database/Connect"
+import { MysqlError } from "mysql"
 
 type HubIdResponse = number;
 
@@ -112,7 +114,14 @@ class CreateProduct {
 
             const details = Validate.hubProduct(unitaryDetails)
             const pricing = Validate.createKitPricing(unitaryPricing, kitRules)
-            
+
+            const childTrayId = await getChildProductId((await details).reference, storeId)
+            .catch(erro => {
+                reject(erro)
+                return 0
+            })
+
+            if(childTrayId == 0){ return }
             const trayParentId = await TrayProducts.createKit(await storeCredentials, {... await details, ...await pricing})
             .catch(erro => {
                 reject(erro)
@@ -129,10 +138,11 @@ class CreateProduct {
                 reject(erro)
                 return false
             })
+
             
             const updatedKitRules = ProductDataBase.updateKitRules({
                 tray_product_parent_id: trayParentId,
-                tray_product_id: kitRules.tray_product_id
+                tray_product_id: childTrayId
             }, `tray_pricing_id=${trayPricingId}`)
             .then(response => {
                 return true
@@ -142,8 +152,9 @@ class CreateProduct {
                 return false
             })
 
+            sleep(300)
 
-            const kitRuleTray = TrayProducts.createKitRule(await storeCredentials, {...kitRules, tray_product_id: kitRules.tray_product_id as number, tray_product_parent_id: trayParentId})
+            const kitRuleTray = TrayProducts.createKitRule(await storeCredentials, {...kitRules, tray_product_id: childTrayId, tray_product_parent_id: trayParentId})
             .then(response => {
                 return true
             })
@@ -156,6 +167,35 @@ class CreateProduct {
                 resolve(trayParentId)
             } else {
                 reject('erro desconhecido')
+            }
+
+            async function getChildProductId(reference: string, storeId: number): Promise<number>{
+                return new Promise(async(resolve, reject) => {
+
+                    const sql = `SELECT tray_product_id
+                    FROM produtos p JOIN tray_produtos tp ON p.hub_id = tp.hub_id
+                    WHERE p.reference = ${reference} AND p.is_kit = 0 AND tp.tray_store_id = ${storeId}`
+
+                    Connect.query(sql, (erro: MysqlError, resultado) => {
+                        if( erro ){
+                            Error(erro.sqlMessage)
+                            console.log(erro)
+                        } else {
+                            if(resultado.length > 0){
+                                resolve(resultado[0].tray_product_id)
+                            } else {
+                                reject('nenhum product id com essa referencia')
+                                Error('nenhum product id com essa referencia')
+                            }
+                        }
+                    })
+                })
+            }
+
+            async function sleep(ms: number): Promise<void>{
+                return new Promise(resolve => {
+                    setTimeout(() => resolve(), ms)
+                })
             }
         })
     }

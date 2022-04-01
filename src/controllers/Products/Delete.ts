@@ -37,6 +37,9 @@ export default {
 
         const { body } = req
     
+        console.log(body)
+
+
         if(body.reference && body.store_id){
             
             await Delete.unitaryTray(body.reference, body.store_id)
@@ -65,8 +68,6 @@ export default {
 
         const { body } = req
 
-        console.log(body)
-    
         if(body.tray_pricing_id && body.store_id){
             
             await Delete.kitTray(body.tray_pricing_id, body.store_id)

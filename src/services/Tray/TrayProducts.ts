@@ -226,9 +226,7 @@ class TrayProducts {
                     local:1}],
                 }
             }
-            console.log(productObj)
             const trayProduct = JSON.stringify(productObj)
-
 
             const query = `${store.api_address}/products/?access_token=${store.access_token}`
             Requests.saveRequest(query)
