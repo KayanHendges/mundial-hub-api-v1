@@ -1,4 +1,5 @@
 import OAuth2Tray from "../../../models/Auth/OAuth2Tray";
+import sleep from "../../sleep";
 import TrayProducts from "../../Tray/TrayProducts";
 import ProductDataBase from "../ProductDataBase"
 import Validate, { IPricingInput, IDetailsInput, IProductKitInput, IRulesInput } from "../Validate"
@@ -106,15 +107,17 @@ class EditProduct {
                 return response.tray_product_id
             })
             .catch(erro => {
+                console.log('opa')
                 reject(erro)
                 return null
             })
             
             if(childrenTrayId == null){
                 return
-            } else {
-                
             }
+
+            await sleep(310)
+            
             const updatedRules = TrayProducts.updateKitRules(await storeCredentials, {
                 ...rules,
                 tray_product_parent_id: trayProductId.tray_product_id,
@@ -130,7 +133,7 @@ class EditProduct {
             if(await updatedProduct == true && await updatedRules == true){
                 resolve()
             } else {
-                reject(`product = ${updatedProduct}, rules: ${updatedRules}`)
+                reject(`product = ${JSON.stringify(await updatedProduct)}, rules: ${JSON.stringify(await updatedRules)}`)
             }
 
         })

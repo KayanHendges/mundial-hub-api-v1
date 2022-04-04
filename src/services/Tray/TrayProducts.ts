@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios"
 import OAuth2Tray from "../../models/Auth/OAuth2Tray"
 import Requests from "../../models/Tray/Requests"
+import TrayRequestsQueue from "./RequestsQueue"
 import { IProductKitPutRule, IProductKitRule, IProductPostUnitary, IProductPutUnitary } from "../../types/tray"
 
 
@@ -15,6 +16,11 @@ class TrayProducts {
 
     async createUnitary(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
+
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const productObj = {
                 Product: {
@@ -90,11 +96,19 @@ class TrayProducts {
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
+            })
         })      
     }
 
     async updateProduct(store: IStore, product: IProductPutUnitary, trayId: number): Promise<void>{
         return new Promise(async(resolve, reject) => {
+
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const productObj = {
                 is_kit: product.is_kit,
@@ -170,6 +184,9 @@ class TrayProducts {
                     reject(`Erro ao editar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
+            })
 
             function removeUndefined(obj: any){
                 Object.keys(obj).forEach(key => {
@@ -184,6 +201,11 @@ class TrayProducts {
 
     async createKit(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
+
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const productObj = {
                 Product: {
@@ -259,11 +281,19 @@ class TrayProducts {
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
+            })
         })      
     }
 
     async createKitRule(store: IStore, rule: IProductKitRule): Promise<{success: boolean, message: string}>{
-        return new Promise((resolve, reject) => {
+        return new Promise(async(resolve, reject) => {
+
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const rulesObj = JSON.stringify([{
                 product_parent_id: rule.tray_product_parent_id,
@@ -299,11 +329,20 @@ class TrayProducts {
                     reject(`Erro ao criar regras do kit na Tray ${store.tray_adm_user} - Item ${rule.tray_product_parent_id}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
+            })
         })
     }
 
     async updateKitRules(store:IStore, rules: IProductKitPutRule): Promise<void>{
         return new Promise(async(resolve, reject) => {
+
+            
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const rulesObj = {
                 product_parent_id: rules.tray_product_parent_id,
@@ -344,6 +383,9 @@ class TrayProducts {
                     reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
+            })
 
             function removeUndefined(obj: any){
                 Object.keys(obj).forEach(key => {
@@ -358,6 +400,11 @@ class TrayProducts {
 
     async delete(store: IStore, trayId: number){
         return new Promise(async(resolve, reject) => {
+
+            await TrayRequestsQueue.newRequest()
+            .catch(erro => {
+                new Error(erro)
+            })
 
             const query = `${store.api_address}/products/${trayId}/?access_token=${store.access_token}`
             Requests.saveRequest(query)
@@ -382,6 +429,9 @@ class TrayProducts {
                     console.log(erro.response.data)
                     reject(`Erro ao excluir o produto na Tray ${store.tray_adm_user} - Item ${trayId}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
+            })
+            .finally(() => {
+                TrayRequestsQueue.finishRequest()
             })
         })
     }

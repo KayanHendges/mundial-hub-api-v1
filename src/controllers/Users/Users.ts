@@ -54,6 +54,8 @@ export default {
     const txtProducts = fs.readFileSync(`./src/files/products.txt`, 'utf8').split('\n')
 
     const products: Products[] = []
+    const eachWeight: any[] = []
+    var totalWeight: number = 0
 
     txtProducts.map(product => {
       const name: string[] = []
@@ -98,7 +100,7 @@ export default {
 
     const finalProducts = await Promise.all(products.map(async(product) => {
       const { sizes, weight } = await getDimension(product.reference)
-
+      eachWeight.push(weight*parseInt(product.volumes))
       return `${product.volumes}x ${product.produto} - ${sizes} ${weight}kg`
     }))
     .then(response => {
@@ -109,35 +111,18 @@ export default {
       return null
     })
 
-    console.log('aqui')
+    eachWeight.map(weight => {
+      totalWeight = totalWeight + weight
+    })
 
     if(!finalProducts){
       return 
     }
-    console.log('aqui2')
 
-    const user = 'e-commerce@mundialpneumaticos.com.br'
-
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.kinghost.net',
-      port: 587,
-      auth: {
-        user: 'e-commerce@mundialpneumaticos.com.br',
-        pass: 'loja264080virtual'
-      }
-    })
-
-    transporter.sendMail({
-      from: user,
-      to: 'nfe@mundialpneumaticos.com.br',
-      subject: 'Email Automático Mundial Hub',
-      text: `${finalProducts.join()}`
-    })
-    .then(response => {
-      res.send(response)
-    })
-    .catch(erro => {
-      res.status(400).send(erro)
+    res.json({
+      finalProducts,
+      eachWeight,
+      totalWeight
     })
 
     async function getDimension(reference: string): Promise<{sizes: string, weight: number}>{
