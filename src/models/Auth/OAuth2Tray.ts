@@ -69,8 +69,10 @@ class OAuth2Tray {
                         return
                     }
                     const differenceTime = differenceInMinutes(store.expirationAccessToken, date)
-                    if(differenceTime < 3100){
+                    if(differenceTime < 31){
                         await refreshToken(store)
+                    } else {
+                        console.log("loja", store.name, differenceTime, "minutos restantes")
                     }
                 })
                 resolve()
