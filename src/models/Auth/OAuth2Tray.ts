@@ -1,5 +1,5 @@
 import axios from "axios"
-import { addHours, differenceInMinutes, parseISO, startOfYesterday } from "date-fns"
+import { addHours, differenceInMinutes, format, parseISO, startOfYesterday } from "date-fns"
 import Connect from "../../database/Connect"
 import { prismaClient } from "../../database/prismaClient";
 import Requests from "../Tray/Requests"
@@ -128,20 +128,30 @@ class OAuth2Tray {
     }
 
     async getStoreCredentials(storeId: number): Promise<ICredentialsTray>{
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM credenciais_tray WHERE store=${storeId}`
+        return new Promise(async(resolve, reject) => {
+            
+            const store = await prismaClient.store.findFirst({
+                where: { trayId: storeId }
+            })
 
-            Connect.query(sql, (erro, resultado) => {
-                if(erro){
-                    console.log(erro)
-                    reject('erro ao encontrar as credenciais no banco de dados')
-                } else {
-                    if(resultado.length > 0){
-                        resolve(resultado[0])
-                    } else {
-                        reject(`nenhuma credencial com o store_id ${storeId}`)
-                    }
-                }
+            if(!store){
+                throw new Error(`Any store found with ${storeId} id`)
+            }
+
+            resolve({
+                credential_id: store.id,
+                consumer_key: "",
+                consumer_secret: "",
+                code: store.oAuth2Code,
+                tray_adm_user: store.name,
+                store: store.trayId.toString(),
+                api_address: store.apiAddress,
+                store_host: store.link,
+                access_token: store.accessToken as string,
+                refresh_token: store.refreshToken as string,
+                date_expiration_access_token: format(store.expirationAccessToken as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
+                date_expiration_refresh_token: format(store.expirationRefreshToken as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
+                date_activated: format(store.tokenActivated as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
             })
         })
     }
