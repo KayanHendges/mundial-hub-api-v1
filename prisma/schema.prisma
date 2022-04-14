@@ -8,19 +8,19 @@ datasource db {
 }
 
 model customers {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  cpf       String?   @db.VarChar(11)
-  cnpj      String?   @db.VarChar(14)
-  email     String    @unique
+  cpf       String?  @db.VarChar(11)
+  cnpj      String?  @db.VarChar(14)
+  email     String   @unique
   phone     String?
   cellphone String?
-  modified  DateTime? @default(now())
-  created   DateTime  @default(now())
+  modified  DateTime
+  created   DateTime @default(now())
 }
 
 model customers_addresses {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   type         String
   name         String?
   recipient    String?
@@ -33,9 +33,9 @@ model customers_addresses {
   state        String
   zip_code     String
   country      String
-  active       Boolean   @default(true)
-  modified     DateTime? @default(now())
-  created      DateTime  @default(now())
+  active       Boolean  @default(true)
+  modified     DateTime
+  created      DateTime @default(now())
 
   @@index([customer_id], map: "customers_addresses_customer_id_fkey")
 }
@@ -57,7 +57,7 @@ model orders {
   partner_id            Int
   paid                  Boolean   @default(false)
   created               DateTime  @default(now())
-  modified              DateTime? @default(now())
+  modified              DateTime
   customerId            Int
   chosen_transporter_id Int
   transporter_id        Int?
@@ -67,53 +67,53 @@ model orders {
 }
 
 model orders_invoices {
-  id       Int       @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   order_id Int
-  cnpj     String    @db.VarChar(14)
+  cnpj     String   @db.VarChar(14)
   number   Int
   key      Int
   link     String?
-  modified DateTime? @default(now())
-  created  DateTime  @default(now())
+  modified DateTime
+  created  DateTime @default(now())
 
   @@index([order_id], map: "orders_invoices_order_id_fkey")
 }
 
 model orders_marketplaces {
-  id                   Int       @id @default(autoincrement())
+  id                   Int      @id @default(autoincrement())
   name                 String
-  order_id             Int       @unique
-  marketplace_order_id Int       @unique
+  order_id             Int      @unique
+  marketplace_order_id Int      @unique
   link                 String?
-  modified             DateTime? @default(now())
-  date                 DateTime  @default(now())
+  modified             DateTime
+  date                 DateTime @default(now())
 }
 
 model orders_notes {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   order_id    Int
   description String
   by          String
-  modified    DateTime? @default(now())
-  created     DateTime  @default(now())
+  modified    DateTime
+  created     DateTime @default(now())
 
   @@index([order_id], map: "orders_notes_order_id_fkey")
 }
 
 model orders_payments {
-  id       Int       @id @default(autoincrement())
+  id       Int      @id @default(autoincrement())
   method   String
-  value    Decimal   @default(0.000000000000000000000000000000)
-  date     DateTime  @default(now())
-  created  DateTime  @default(now())
-  modified DateTime? @default(now())
+  value    Decimal  @default(0.000000000000000000000000000000)
+  date     DateTime @default(now())
+  created  DateTime @default(now())
+  modified DateTime
   order_id Int
 
   @@index([order_id], map: "orders_payments_order_id_fkey")
 }
 
 model orders_products_sold {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   order_id   Int
   tray_id    Int?
   product_id Int
@@ -123,8 +123,8 @@ model orders_products_sold {
   cost       Decimal?
   price      Decimal
   paid_price Decimal
-  modified   DateTime? @default(now())
-  created    DateTime  @default(now())
+  modified   DateTime
+  created    DateTime @default(now())
 
   @@index([order_id], map: "orders_products_sold_order_id_fkey")
 }
@@ -141,15 +141,17 @@ model Store {
   expirationAccessToken  DateTime? @map("expiration_access_token")
   expirationRefreshToken DateTime? @map("expiration_refresh_token")
   tokenActivated         DateTime? @map("token_activated")
-  modified               DateTime? @default(now())
+  modified               DateTime  @updatedAt
 
   @@map("stores")
 }
 
 model transporters {
-  id            Int     @id @default(autoincrement())
-  external_id   Int     @unique
+  id            Int      @id @default(autoincrement())
+  external_id   Int      @unique
   name          String
   ssw           Boolean
   tracking_link String?
+  created       DateTime @default(now())
+  modified      DateTime
 }

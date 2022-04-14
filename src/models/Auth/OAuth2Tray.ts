@@ -60,19 +60,18 @@ class OAuth2Tray {
         }
 
         async function expiredTokens(stores: Store[]): Promise<void>{
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
 
                 const date = addHours(new Date(), -3)
 
-                stores.map(store => {
+                stores.map(async(store) => {
                     if(!store.expirationAccessToken){
                         return
                     }
                     const differenceTime = differenceInMinutes(store.expirationAccessToken, date)
-                    if(differenceTime < 31){
-                        refreshToken(store)
+                    if(differenceTime < 3100){
+                        await refreshToken(store)
                     }
-                    console.log("loja", store.name, differenceTime, "minutos restantes")
                 })
                 resolve()
             })
@@ -90,16 +89,14 @@ class OAuth2Tray {
                     const sql = `UPDATE credenciais_tray SET access_token='${tokenData.access_token}', refresh_token='${tokenData.refresh_token}', date_expiration_access_token='${response.data.date_expiration_access_token}',
                     date_expiration_refresh_token='${response.data.date_expiration_refresh_token}', date_activated='${response.data.date_activated}' WHERE store=${tokenData.store_id}`
 
-                    console.log(tokenData.date_activated, parseISO(tokenData.date_activated))
-
                     const update = await prismaClient.store.update({
                         where: { trayId: store.trayId },
                         data: {
                             accessToken: tokenData.access_token,
                             refreshToken: tokenData.refresh_token,
-                            expirationAccessToken: parseISO(tokenData.date_expiration_access_token),
-                            expirationRefreshToken: parseISO(tokenData.date_expiration_refresh_token),
-                            tokenActivated: parseISO(tokenData.date_activated)
+                            expirationAccessToken: addHours(parseISO(tokenData.date_expiration_access_token), -3),
+                            expirationRefreshToken: addHours(parseISO(tokenData.date_expiration_refresh_token), -3),
+                            tokenActivated: addHours(parseISO(tokenData.date_activated), -3),
                         }
                     })   
                     
@@ -114,15 +111,30 @@ class OAuth2Tray {
     }
 
     async getToken(storeId: any): Promise<any>{
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT * FROM credenciais_tray WHERE store=${storeId}`
+        return new Promise(async(resolve, reject) => {
 
-            Connect.query(sql, (erro, resultado) => {
-                if(erro){
-                    console.log(erro)
-                } else {
-                    resolve(resultado[0].access_token)
-                }
+            const store = await prismaClient.store.findFirst({
+                where: { trayId: storeId }
+            })
+
+            if(!store){
+                throw new Error(`Any store found with ${storeId} id`)
+            }
+
+            resolve({
+                credential_id: store.id,
+                consumer_key: "",
+                consumer_secret: "",
+                code: store.oAuth2Code,
+                tray_adm_user: store.name,
+                store: store.trayId.toString(),
+                api_address: store.apiAddress,
+                store_host: store.link,
+                access_token: store.accessToken as string,
+                refresh_token: store.refreshToken as string,
+                date_expiration_access_token: format(store.expirationAccessToken as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
+                date_expiration_refresh_token: format(store.expirationRefreshToken as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
+                date_activated: format(store.tokenActivated as Date, 'yyyy-MM-ddThh:mm:ss:SSS'),
             })
         })
     }
