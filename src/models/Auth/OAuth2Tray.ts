@@ -1,6 +1,7 @@
 import axios from "axios"
-import { addHours, differenceInMinutes, parseISO } from "date-fns"
+import { addHours, differenceInMinutes, parseISO, startOfYesterday } from "date-fns"
 import Connect from "../../database/Connect"
+import { prismaClient } from "../../database/prismaClient";
 import Requests from "../Tray/Requests"
 
 interface ICredentialsTray {
@@ -19,12 +20,27 @@ interface ICredentialsTray {
     date_activated: string;
 }
 
+interface Store {
+    id: number
+    trayId: number
+    name: string
+    link: string
+    apiAddress: string
+    oAuth2Code: string
+    accessToken: string | null
+    refreshToken: string | null
+    expirationAccessToken: Date | null
+    expirationRefreshToken: Date | null
+    tokenActivated: Date | null
+    modified: Date | null
+}
+
 class OAuth2Tray {
 
     async tokenRoutine(){
 
-        const tokens = await getAllTokens()
-        await expiredTokens(tokens)
+        const stores = await getStores()
+        await expiredTokens(stores)
         .then(response => {
             const date = addHours(new Date(), -3)
             console.log("verificações de tokens feitos", date)
@@ -32,69 +48,66 @@ class OAuth2Tray {
 
         setTimeout(() => {
             this.tokenRoutine()
-        }, 1800000) //30 minutos
+        }, 1000 * 60 * 30) //30 minutos
 
-        async function getAllTokens(): Promise<any[]>{
-            return new Promise((resolve, reject) => {
+        async function getStores(): Promise<Store[]>{
+            return new Promise(async(resolve, reject) => {
                 
-                const sql = `SELECT * FROM credenciais_tray`
+                const stores = await prismaClient.store.findMany()
 
-                Connect.query(sql, (erro, resultado: any[]) => {
-                    if(erro){
-                        console.log(erro)
-                    } else {
-                        const allTokens: any[] = []
-                        
-                        resultado.map(token => {
-                            if(token.access_token.length > 0){
-                                allTokens.push(token)
-                            }
-                        })
-                        resolve(allTokens)
-                    }
-                })
+                resolve(stores)
             })
         }
 
-        async function expiredTokens(tokens: any[]): Promise<void>{
+        async function expiredTokens(stores: Store[]): Promise<void>{
             return new Promise((resolve, reject) => {
 
                 const date = addHours(new Date(), -3)
 
-                tokens.map(token => {
-                    const differenceTime = differenceInMinutes(addHours(parseISO(token.date_expiration_access_token), -3), date)
-                    if(differenceTime < 31){
-                        refreshToken(token)
+                stores.map(store => {
+                    if(!store.expirationAccessToken){
+                        return
                     }
-                    console.log("loja", token.store, differenceTime, "minutos restantes")
+                    const differenceTime = differenceInMinutes(store.expirationAccessToken, date)
+                    if(differenceTime < 3100){
+                        refreshToken(store)
+                    }
+                    console.log("loja", store.name, differenceTime, "minutos restantes")
                 })
                 resolve()
             })
         }
 
-        async function refreshToken(token: any): Promise<string>{
+        async function refreshToken(store: Store): Promise<string>{
             return new Promise((resolve, reject) => {
-                const query = `${token.api_address}/auth?refresh_token=${token.refresh_token}`
+                const query = `${store.apiAddress}/auth?refresh_token=${store.refreshToken}`
                 Requests.saveRequest(query)
                 
                 axios.get(query)
-                .then(response => {
-                    console.log(response.data)
+                .then(async(response) => {
                     const tokenData = response.data
 
                     const sql = `UPDATE credenciais_tray SET access_token='${tokenData.access_token}', refresh_token='${tokenData.refresh_token}', date_expiration_access_token='${response.data.date_expiration_access_token}',
                     date_expiration_refresh_token='${response.data.date_expiration_refresh_token}', date_activated='${response.data.date_activated}' WHERE store=${tokenData.store_id}`
 
-                    Connect.query(sql, (erro, resultado) => {
-                        if(erro){
-                            console.log(erro)
-                        } else {
-                            console.log("token da loja", tokenData.store_id, "atualizado")
-                            resolve(`token da loja, ${tokenData.store_id}, atualizado`)
+                    console.log(tokenData.date_activated, parseISO(tokenData.date_activated))
+
+                    const update = await prismaClient.store.update({
+                        where: { trayId: store.trayId },
+                        data: {
+                            accessToken: tokenData.access_token,
+                            refreshToken: tokenData.refresh_token,
+                            expirationAccessToken: parseISO(tokenData.date_expiration_access_token),
+                            expirationRefreshToken: parseISO(tokenData.date_expiration_refresh_token),
+                            tokenActivated: parseISO(tokenData.date_activated)
                         }
-                    })
+                    })   
+                    
+                    console.log(update)
+
+                    resolve('sucesso')
                 })
-                .catch(erro => console.log(erro.response, token.refresh_token))
+                .catch(erro => console.log(erro.response.data, store.refreshToken))
             })
         }
 
