@@ -26,6 +26,8 @@ const productsRoutes = Router();
 
     productsRoutes.get('/products/unitary/:reference', List.unitary)
     productsRoutes.get('/products/kits/:reference', List.kits)
+
+    productsRoutes.get('/products/unitary-by-tray-id', List.unitaryByTrayId) // temporário para uso da api v2
  
     // create 
     productsRoutes.post('/products/create/unitary', Create.unitary)

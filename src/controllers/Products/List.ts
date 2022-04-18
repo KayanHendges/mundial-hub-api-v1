@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import Products from '../../models/Products/Products';
 import List from '../../models/Products/List';
+import { prismaClient } from '../../database/prismaClient';
+import Connect from '../../database/Connect';
 
 export default {
 
@@ -28,6 +30,44 @@ export default {
       res.status(400).json({
         code: 400,
         message: 'está faltando a referencia no body'
+      })
+    }
+  },
+
+  async unitaryByTrayId(req: Request, res: Response){ // temporário para a api 2
+    const { tray_id, store_id } = req.query
+
+    if(tray_id && store_id){
+      
+      const sql = `SELECT p.hub_id
+      FROM produtos p JOIN tray_produtos tp ON p.hub_id = tp.hub_id
+      WHERE tp.tray_product_id = ${tray_id} and tp.tray_store_id = ${store_id}`
+
+      Connect.query(sql, (err, result) => {
+        if(err){
+          console.log(err)
+          res.status(400).json({
+            code: 400,
+            message: 'error getting product from database'
+          })
+        } else {
+          if(result.length > 0){
+            res.json({
+              hub_id: result[0].hub_id
+            })
+          } else {
+            res.status(404).json({
+              code: 404,
+              message: 'any product found in database'
+            })
+          }
+        }
+      })
+
+    } else {
+      res.status(400).json({
+        code: 400,
+        message: 'está faltando a referencia'
       })
     }
   },
