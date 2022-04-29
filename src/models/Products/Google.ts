@@ -4,7 +4,11 @@ class Google {
 
     async xml(): Promise<string>{
 
+        const rssStart = '<rss xmlns:g="http://base.google.com/ns/1.0" xmlns:c="http://base.google.com/cns/1.0" version="2.0">'
+        const rssEnd = '</rss>'
+
         const json = {
+            // "?xml version='1.0' encoding='UTF-8' ?": '',
             channel: {
                 title: 'Santa Cruz Pneus',
                 link: 'https://www.santacruzpneus.com.br',
@@ -39,7 +43,7 @@ class Google {
 
         console.log('xml', xml)
 
-        return xml
+        return rssStart + xml + rssEnd
     }
 
 }
