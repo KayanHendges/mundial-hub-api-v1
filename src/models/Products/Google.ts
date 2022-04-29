@@ -41,8 +41,6 @@ class Google {
             }
         })
 
-        console.log(googleProducts.length, googleProducts[0])
-
         const json = {
             channel: {
                 title: 'Santa Cruz Pneus',
@@ -72,8 +70,6 @@ class Google {
                 // }
             }
         }
-
-        console.log(json)
 
         const xml = convert.js2xml(json, {
             compact: true,
@@ -106,7 +102,7 @@ class Google {
                 return date
             }
 
-            return format(date, 'yyyy-MM-dd hh:mm:ss')
+            return format(date, 'yyyy-MM-dd hh:mm:ss').replace(' ', 'T')
             
         }
     }
