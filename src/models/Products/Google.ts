@@ -41,7 +41,7 @@ class Google {
             compact: true,
         })
 
-        console.log('xml', xml)
+        console.log('xml', xml) 
 
         return rssStart + xml + rssEnd
     }
