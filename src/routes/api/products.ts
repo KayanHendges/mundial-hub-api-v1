@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Create from '../../controllers/Products/Create';
 import Delete from '../../controllers/Products/Delete';
 import Edit from '../../controllers/Products/Edit';
+import Google from '../../controllers/Products/Google';
 import List from '../../controllers/Products/List';
 import Page from '../../controllers/Products/Page';
 
@@ -50,5 +51,10 @@ const productsRoutes = Router();
 
     productsRoutes.post('/products/delete/unitary-tray', Delete.unitaryTray)
     productsRoutes.post('/products/delete/kit-tray', Delete.kitTray)
+
+
+    // xml products
+
+    productsRoutes.get('/products/xml', Google.Xml)
             
 export default productsRoutes;
