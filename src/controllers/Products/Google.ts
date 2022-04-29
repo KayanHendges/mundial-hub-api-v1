@@ -5,12 +5,19 @@ export default {
     
     async Xml(request: Request, response: Response){
 
-        const xml = await Google.xml()
+        
+        try {
+            const xml = await Google.xml()
 
+            response.set('Content-Type', 'text/xml');
+            response.type('xml')
+            response.send(xml)
+        } catch (err) {
+            response.status(400).json({
+                message: 'unexpected error'
+            })
+        }
 
-        response.set('Content-Type', 'text/xml');
-        response.type('xml')
-        response.send(xml)
     }
 
 }
