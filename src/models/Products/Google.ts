@@ -18,7 +18,7 @@ class Google {
 
         const googleProducts = products.map((product, index) => {
 
-            return {
+            const obj = {
                 "g:id": product.tray_product_id,
                 "title": titleize(product.product_name),
                 "link": `https://www.santacruzpneus.com.br/loja/produto.php?IdProd=${product.tray_product_id}`,
@@ -39,6 +39,15 @@ class Google {
                 // },
                 "g:condition": 'new'
             }
+
+            if(product.ean.length > 0){
+                return {
+                    ...obj,
+                    "g:gtin": product.ean                    
+                }
+            }
+
+            return obj
         })
 
         const json = {
