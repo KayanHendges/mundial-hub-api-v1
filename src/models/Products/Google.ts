@@ -121,7 +121,7 @@ class Google {
         function hasPromotionToPromotionalPrice(product: any){
 
             if(product.tray_promotional_price > 0){
-                return `R$ ${(product.tray_price*0.9).toFixed(2)}`
+                return `R$ ${(product.tray_promotional_price*0.9).toFixed(2)}`
             }
 
             if(product.tray_promotional_price == 0 || product.tray_promotional_price == null){
