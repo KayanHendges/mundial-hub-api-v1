@@ -98,6 +98,10 @@ class Google {
 
         function date(date: string | Date){
 
+            if(date == '0000-00-00 00:00:00'){
+                return ''
+            }
+
             if(typeof date == 'string'){
                 return date
             }
