@@ -81,7 +81,8 @@ class Google {
             return new Promise((resolve, reject) => {
                 const sql = `SELECT *
                 FROM produtos p JOIN tray_produtos tp ON p.hub_id=tp.hub_id
-                WHERE p.is_kit = 0 AND tp.tray_store_id = 1049898 AND tray_product_id NOT IN (${errorProducts})`
+                WHERE p.is_kit = 0 AND tp.tray_store_id = 1049898 AND tray_product_id NOT IN (${errorProducts})
+                AND p.ean NOT LIKE '' AND p.ean NOT NULL`
                 
                 Connect.query(sql, (err, result) => {
     
