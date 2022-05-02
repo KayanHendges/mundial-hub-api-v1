@@ -22,7 +22,7 @@ class Google {
                 "g:id": product.tray_product_id,
                 "title": titleize(product.product_name),
                 "link": `https://www.santacruzpneus.com.br/loja/produto.php?IdProd=${product.tray_product_id}`,
-                "g:price": `R$ ${(product.tray_price*0.9).toFixed(2)}`,
+                "g:price": hasPromotionToPrice(product),
                 "g:shipping_weight": `${product.weight/1000} kg`,
                 "description": titleize(product.product_name),
                 "g:brand": product.brand,
@@ -30,7 +30,7 @@ class Google {
                 "g:image_link": product.picture_source_1,
                 "g:product_type": 'Pneus',
                 "g:availability": `${product.tray_stock > 0? 'in stock' : 'out of stock'}`,
-                "g:sale_price": `R$ ${(product.tray_promotional_price > 0? product.tray_promotional_price *0.9 : product.tray_price*0.9).toFixed(2)}`,
+                "g:sale_price": hasPromotionToPromotionalPrice(product),
                 "g:sale_price_effective_date": `${date(product.start_promotion)}/${date(product.end_promotion)}`,
                 "g:mpn": product.reference,
                 // "g:installment": {
@@ -104,6 +104,30 @@ class Google {
 
             return format(date, 'yyyy-MM-dd hh:mm:ss').replace(' ', 'T')
             
+        }
+
+        function hasPromotionToPrice(product: any){
+
+            if(product.tray_promotional_price > 0){
+                return `R$ ${product.tray_price.toFixed(2)}`
+            }
+
+            if(product.tray_promotional_price == 0 || product.tray_promotional_price == null){
+                return `R$ ${(product.tray_price *0.9).toFixed(2)}`
+            }
+
+        }
+
+        function hasPromotionToPromotionalPrice(product: any){
+
+            if(product.tray_promotional_price > 0){
+                return `R$ ${(product.tray_price*0.9).toFixed(2)}`
+            }
+
+            if(product.tray_promotional_price == 0 || product.tray_promotional_price == null){
+                return ``
+            }
+
         }
     }
 
