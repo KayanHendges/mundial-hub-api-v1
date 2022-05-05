@@ -1,9 +1,9 @@
 import mysql from 'mysql'
 
 const Connect = mysql.createPool({
-    host: 'localhost',
+    host: '3.136.243.230',
     port: 3306,
-    user: 'root',
+    user: 'prisma',
     password: 'Db264080Db', 
     database: 'mundialh_mundial_hub'
 })
