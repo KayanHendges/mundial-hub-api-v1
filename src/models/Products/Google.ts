@@ -18,11 +18,11 @@ class Google {
 
         const googleProducts = products.map((product, index) => {
 
-            return {
+            const obj = {
                 "g:id": product.tray_product_id,
                 "title": titleize(product.product_name),
                 "link": `https://www.santacruzpneus.com.br/loja/produto.php?IdProd=${product.tray_product_id}`,
-                "g:price": `R$ ${(product.tray_price*0.9).toFixed(2)}`,
+                "g:price": hasPromotionToPrice(product),
                 "g:shipping_weight": `${product.weight/1000} kg`,
                 "description": titleize(product.product_name),
                 "g:brand": product.brand,
@@ -30,7 +30,7 @@ class Google {
                 "g:image_link": product.picture_source_1,
                 "g:product_type": 'Pneus',
                 "g:availability": `${product.tray_stock > 0? 'in stock' : 'out of stock'}`,
-                "g:sale_price": `R$ ${(product.tray_promotional_price > 0? product.tray_promotional_price *0.9 : product.tray_price*0.9).toFixed(2)}`,
+                "g:sale_price": hasPromotionToPromotionalPrice(product),
                 "g:sale_price_effective_date": `${date(product.start_promotion)}/${date(product.end_promotion)}`,
                 "g:mpn": product.reference,
                 // "g:installment": {
@@ -39,6 +39,15 @@ class Google {
                 // },
                 "g:condition": 'new'
             }
+
+            if(product.ean.length > 0){
+                return {
+                    ...obj,
+                    "g:gtin": product.ean                    
+                }
+            }
+
+            return obj
         })
 
         const json = {
@@ -81,11 +90,13 @@ class Google {
             return new Promise((resolve, reject) => {
                 const sql = `SELECT *
                 FROM produtos p JOIN tray_produtos tp ON p.hub_id=tp.hub_id
-                WHERE p.is_kit = 0 AND tp.tray_store_id = 1049898 AND tray_product_id NOT IN (${errorProducts})`
+                WHERE p.is_kit = 0 AND tp.tray_store_id = 1049898 AND tray_product_id NOT IN (${errorProducts})
+                AND p.ean NOT LIKE ''`
                 
                 Connect.query(sql, (err, result) => {
     
                     if(err){
+                        console.log(err)
                         reject(err)
                     } else {
                         resolve(result)
@@ -98,12 +109,40 @@ class Google {
 
         function date(date: string | Date){
 
+            if(date == '0000-00-00 00:00:00'){
+                return ''
+            }
+
             if(typeof date == 'string'){
                 return date
             }
 
             return format(date, 'yyyy-MM-dd hh:mm:ss').replace(' ', 'T')
             
+        }
+
+        function hasPromotionToPrice(product: any){
+
+            if(product.tray_promotional_price > 0){
+                return `R$ ${product.tray_price.toFixed(2)}`
+            }
+
+            if(product.tray_promotional_price == 0 || product.tray_promotional_price == null){
+                return `R$ ${(product.tray_price *0.9).toFixed(2)}`
+            }
+
+        }
+
+        function hasPromotionToPromotionalPrice(product: any){
+
+            if(product.tray_promotional_price > 0){
+                return `R$ ${(product.tray_promotional_price*0.9).toFixed(2)}`
+            }
+
+            if(product.tray_promotional_price == 0 || product.tray_promotional_price == null){
+                return ``
+            }
+
         }
     }
 
