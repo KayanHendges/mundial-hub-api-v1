@@ -181,6 +181,7 @@ class Categories {
 
         function validateCategory(category: any, parents: any): any{
             return {
+                store_id: 6668385,
                 tray_category_parent_id: parents.tray_category_id,
                 tray_scpneus_category_parent_id: parents.tray_scpneus_category_id,
                 category_name: category.category_name,
