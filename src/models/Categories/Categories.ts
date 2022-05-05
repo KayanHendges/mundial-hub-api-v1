@@ -260,6 +260,7 @@ class Categories {
 
                 const categoryObj = {
                     ...category,
+                    tray_adm_user: 'mundial',
                     tray_category_id: mundialId,
                     tray_scpneus_category_id: scpneusId
                 }
