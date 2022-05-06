@@ -262,7 +262,7 @@ class Categories {
 
                 const categoryObj = {
                     ...category,
-                    stored_id: 668385,
+                    store_id: 668385,
                     tray_adm_user: 'mundial',
                     tray_category_id: mundialId,
                     tray_scpneus_category_id: scpneusId
