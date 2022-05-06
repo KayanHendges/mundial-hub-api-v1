@@ -116,6 +116,8 @@ class Categories {
 
                 const categoryObj = {
                     ...category,
+                    store_id: 668385,
+                    tray_adm_user: 'mundialpnematicos',
                     tray_category_parent_id: 0,
                     tray_scpneus_category_parent_id: 0,
                     tray_category_id: mundialId,
@@ -260,6 +262,7 @@ class Categories {
 
                 const categoryObj = {
                     ...category,
+                    stored_id: 668385,
                     tray_adm_user: 'mundial',
                     tray_category_id: mundialId,
                     tray_scpneus_category_id: scpneusId
