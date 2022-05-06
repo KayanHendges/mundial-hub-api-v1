@@ -104,7 +104,7 @@ class Categories {
         }
         async function saveDB(category, mundialId, scpneusId) {
             return new Promise(resolve => {
-                const categoryObj = Object.assign(Object.assign({}, category), { tray_category_parent_id: 0, tray_scpneus_category_parent_id: 0, tray_category_id: mundialId, tray_scpneus_category_id: scpneusId });
+                const categoryObj = Object.assign(Object.assign({}, category), { store_id: 668385, tray_adm_user: 'mundialpnematicos', tray_category_parent_id: 0, tray_scpneus_category_parent_id: 0, tray_category_id: mundialId, tray_scpneus_category_id: scpneusId });
                 const sql = `INSERT INTO categorias SET ?`;
                 Connect_1.default.query(sql, categoryObj, (erro, resultado) => {
                     if (erro) {
@@ -157,6 +157,7 @@ class Categories {
         }
         function validateCategory(category, parents) {
             return {
+                store_id: 6668385,
                 tray_category_parent_id: parents.tray_category_id,
                 tray_scpneus_category_parent_id: parents.tray_scpneus_category_id,
                 category_name: category.category_name,
@@ -226,7 +227,7 @@ class Categories {
         }
         async function saveDB(category, mundialId, scpneusId) {
             return new Promise(resolve => {
-                const categoryObj = Object.assign(Object.assign({}, category), { tray_category_id: mundialId, tray_scpneus_category_id: scpneusId });
+                const categoryObj = Object.assign(Object.assign({}, category), { store_id: 668385, tray_adm_user: 'mundial', tray_category_id: mundialId, tray_scpneus_category_id: scpneusId });
                 const sql = `INSERT INTO categorias SET ?`;
                 Connect_1.default.query(sql, categoryObj, (erro, resultado) => {
                     if (erro) {
