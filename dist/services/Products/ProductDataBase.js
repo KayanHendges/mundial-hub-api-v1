@@ -352,7 +352,7 @@ class Product {
                 kit_price: pricing.kit_price,
                 quantity: pricing.quantity,
                 price_rule: pricing.price_rule,
-                discount_type: pricing.discount_value,
+                discount_type: pricing.discount_type,
                 discount_value: pricing.discount_value,
                 creation_date: new Date()
             };
