@@ -39,17 +39,17 @@ class Temp {
             const description = `${(0, titleize_1.default)(product.product_name)}
 
             Modelo: ${product.model}
-            Marca: ${product.model}
+            Marca: ${product.brand}
             ${construcaoRadial.length > 0 ? 'Construção: ' : ''}${construcaoRadial.length > 0 ? construcaoRadial : ''}
             
-            Dimensões
+            Dimensões:
             
-            Comprimento: ${product.length}
-            Altura: ${product.height}
-            Largura: ${product.width}
+            Comprimento: ${product.length}cm
+            Altura: ${product.height}cm
+            Largura: ${product.width}cm
             
-            Peso: ${product.weight}
-            garantia: 5 anos de garantia
+            Peso: ${product.weight / 1000}kg
+            garantia: 5 anos
             `;
             return Object.assign(Object.assign({}, product), { product_description: description.replaceAll("\n", "</br>") });
         });
