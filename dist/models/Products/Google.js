@@ -22,7 +22,7 @@ class Google {
                 "link": `https://www.santacruzpneus.com.br/loja/produto.php?IdProd=${product.tray_product_id}`,
                 "g:price": hasPromotionToPrice(product),
                 "g:shipping_weight": `${product.weight / 1000} kg`,
-                "description": (0, titleize_1.default)(product.product_name),
+                "description": product.product_description.replaceAll('</br>', '\n'),
                 "g:brand": product.brand,
                 "g:google_product_category": {},
                 "g:image_link": product.picture_source_1,
