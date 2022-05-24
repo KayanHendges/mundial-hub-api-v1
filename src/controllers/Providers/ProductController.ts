@@ -39,6 +39,16 @@ export default {
     await SaveProducts.saveProductsDB(products.products, 4, res)
   },
 
+  async ConvertProductsDunlop(req: Request, res: Response) {
+    const products = ConvertProducts.dunlopText('dunlop_products.txt')
+
+    try {
+      await SaveProducts.saveProductsDB(products, 7, res)
+    } catch (err) {
+      throw new Error(err)
+    }
+  },
+
   async listProviderProducts(req: Request, res: Response){
 
     const {params, query}: any = req

@@ -325,6 +325,56 @@ class ConvertProducts implements IConvertProducts {
 
   }
 
+  dunlopText(products: string){
+
+    const textProducts = fs.readFileSync(`./src/files/${products}`, 'utf8').split('\n')
+    const lastUpdate = parseISO(textProducts[0].replace('\r', ''))
+
+    const fillText: IProduct[] = [] 
+    
+    textProducts.map((line, index) => {
+      
+      var productId = 0
+      const nameArray: string[] = []
+      var brand = 'DUNLOP'
+      var stock = 4
+      var price = 0
+      var additionalCosts = 0
+      
+      const words = line.split(' ')
+      var firstPriceIndex = -1
+
+      words.map((word, index) => {
+        if(index == 0){
+          productId = parseInt(word)
+        }
+
+        if(index > 2 && word != 'R$' && firstPriceIndex == -1){
+          nameArray.push(word)
+        }
+
+        if(word == 'R$' && firstPriceIndex == -1){
+          firstPriceIndex = index +1
+        }
+
+        if(index == words.length-1){
+          price = parseFloat(word.replace(',', '.'))
+        }
+      })
+
+      fillText.push({
+        productId,
+        productName: nameArray.join(' '),
+        brand,
+        stock,
+        price,
+        additionalCosts,
+        lastUpdate
+      })
+    })
+    
+    return fillText
+  }
 }
   
-  export default new ConvertProducts;
+export default new ConvertProducts;
