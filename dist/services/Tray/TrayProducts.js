@@ -9,6 +9,12 @@ const RequestsQueue_1 = __importDefault(require("./RequestsQueue"));
 class TrayProducts {
     async createUnitary(store, product) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            const min = 1000 * 20;
+            const max = 1000 * 40;
+            const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
+            resolve(randomTrayId);
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);
@@ -94,6 +100,9 @@ class TrayProducts {
     }
     async updateProduct(store, product, trayId) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve();
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);
@@ -185,6 +194,12 @@ class TrayProducts {
     }
     async createKit(store, product) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            const min = 1000 * 20;
+            const max = 1000 * 40;
+            const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
+            resolve(randomTrayId);
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);
@@ -270,6 +285,9 @@ class TrayProducts {
     }
     async createKitRule(store, rule) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve({ success: true, message: 'regra de kit criada com sucesso' });
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);
@@ -314,6 +332,9 @@ class TrayProducts {
     }
     async updateKitRules(store, rules) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve();
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);
@@ -369,6 +390,9 @@ class TrayProducts {
     }
     async delete(store, trayId) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve({ success: true, message: 'produto excluído com sucesso' });
+            // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
                 new Error(erro);

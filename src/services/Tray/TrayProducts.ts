@@ -17,6 +17,17 @@ class TrayProducts {
     async createUnitary(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
 
+            // service disabled
+
+            const min = 1000 * 20
+            const max = 1000 * 40
+
+            const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min)
+
+            resolve(randomTrayId)
+
+            // just for demonstration
+
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
                 new Error(erro)
@@ -104,6 +115,13 @@ class TrayProducts {
 
     async updateProduct(store: IStore, product: IProductPutUnitary, trayId: number): Promise<void>{
         return new Promise(async(resolve, reject) => {
+
+            // service disabled
+
+            resolve()
+
+            // just for demonstration
+
 
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
@@ -202,6 +220,17 @@ class TrayProducts {
     async createKit(store: IStore, product: IProductPostUnitary): Promise<number>{
         return new Promise(async(resolve, reject) => {
 
+            // service disabled
+
+            const min = 1000 * 20
+            const max = 1000 * 40
+
+            const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min)
+
+            resolve(randomTrayId)
+
+            // just for demonstration
+
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
                 new Error(erro)
@@ -290,6 +319,12 @@ class TrayProducts {
     async createKitRule(store: IStore, rule: IProductKitRule): Promise<{success: boolean, message: string}>{
         return new Promise(async(resolve, reject) => {
 
+            // service disabled
+
+            resolve({ success: true, message: 'regra de kit criada com sucesso' })
+
+            // just for demonstration
+
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
                 new Error(erro)
@@ -338,7 +373,12 @@ class TrayProducts {
     async updateKitRules(store:IStore, rules: IProductKitPutRule): Promise<void>{
         return new Promise(async(resolve, reject) => {
 
-            
+            // service disabled
+
+            resolve()
+
+            // just for demonstration
+
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
                 new Error(erro)
@@ -398,8 +438,14 @@ class TrayProducts {
         })
     }
 
-    async delete(store: IStore, trayId: number){
+    async delete(store: IStore, trayId: number): Promise<{success: boolean, message: string}>{
         return new Promise(async(resolve, reject) => {
+
+            // service disabled
+
+            resolve({success: true, message: 'produto excluído com sucesso'})
+
+            // just for demonstration
 
             await TrayRequestsQueue.newRequest()
             .catch(erro => {
