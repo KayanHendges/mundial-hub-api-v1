@@ -28,6 +28,15 @@ exports.default = {
         const products = ConvertProducts_1.default.duncanText('duncan_products.txt');
         await SaveProducts_1.default.saveProductsDB(products.products, 4, res);
     },
+    async ConvertProductsDunlop(req, res) {
+        const products = ConvertProducts_1.default.dunlopText('dunlop_products.txt');
+        try {
+            await SaveProducts_1.default.saveProductsDB(products, 7, res);
+        }
+        catch (err) {
+            throw new Error(err);
+        }
+    },
     async listProviderProducts(req, res) {
         const { params, query } = req;
         if (params.provider_id != undefined && query.search != undefined) {

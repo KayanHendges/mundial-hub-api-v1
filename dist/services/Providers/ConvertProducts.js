@@ -224,5 +224,44 @@ class ConvertProducts {
             products: fillText
         };
     }
+    dunlopText(products) {
+        const textProducts = fs_1.default.readFileSync(`./src/files/${products}`, 'utf8').split('\n');
+        const lastUpdate = (0, date_fns_1.parseISO)(textProducts[0].replace('\r', ''));
+        const fillText = [];
+        textProducts.map((line, index) => {
+            var productId = 0;
+            const nameArray = [];
+            var brand = 'DUNLOP';
+            var stock = 4;
+            var price = 0;
+            var additionalCosts = 0;
+            const words = line.split(' ');
+            var firstPriceIndex = -1;
+            words.map((word, index) => {
+                if (index == 0) {
+                    productId = parseInt(word);
+                }
+                if (index > 2 && word != 'R$' && firstPriceIndex == -1) {
+                    nameArray.push(word);
+                }
+                if (word == 'R$' && firstPriceIndex == -1) {
+                    firstPriceIndex = index + 1;
+                }
+                if (index == words.length - 1) {
+                    price = parseFloat(word.replace(',', '.'));
+                }
+            });
+            fillText.push({
+                productId,
+                productName: nameArray.join(' '),
+                brand,
+                stock,
+                price,
+                additionalCosts,
+                lastUpdate
+            });
+        });
+        return fillText;
+    }
 }
 exports.default = new ConvertProducts;

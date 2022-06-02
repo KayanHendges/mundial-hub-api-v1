@@ -11,19 +11,38 @@ class SaveProducts {
         if (zeroStock && standartCosts) {
             console.log('Estoques zerados');
             // const lastUpdate = new Date()
-            const response = await productLoop(products, 0, providerId);
-            console.log('fim da operação');
-            if (response.success) {
-                res.status(200).json({
-                    code: 200,
-                    message: 'produtos atualizados com sucesso',
-                    products: products
-                });
-            }
-            else {
+            const save = await Promise.all(products.map(async (product, index) => {
+                const updateProduct = await update(product, providerId);
+                if (!updateProduct.success) {
+                    const createProduct = await create(product, providerId);
+                    if (createProduct.success) {
+                        console.log(index + 1, " / ", products.length, ' - inserido com sucesso');
+                    }
+                    else {
+                        console.log('falha ao inserir');
+                    }
+                    return;
+                }
+                else {
+                    console.log(index + 1, " / ", products.length, ' - update com sucesso');
+                    return;
+                }
+            }))
+                .catch(err => {
+                console.log(err);
                 res.status(400).json({
                     code: 400,
                     message: 'houve algum erro no processo de atualização do banco de dados',
+                    err: err.message || 'unexpected error',
+                    products: products
+                });
+            })
+                .then(response => { return true; });
+            console.log('fim da operação');
+            if (save) {
+                res.status(200).json({
+                    code: 200,
+                    message: 'produtos atualizados com sucesso',
                     products: products
                 });
             }

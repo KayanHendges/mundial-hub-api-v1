@@ -77,9 +77,10 @@ class TrayProducts {
                 }
             })
                 .catch(erro => {
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                var _a, _b, _c, _d, _e, _f;
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);
@@ -159,9 +160,10 @@ class TrayProducts {
                 }
             })
                 .catch(erro => {
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao editar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                var _a, _b, _c, _d, _e, _f;
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao editar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);
@@ -251,9 +253,10 @@ class TrayProducts {
                 }
             })
                 .catch(erro => {
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao cadastrar Kit na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                var _a, _b, _c, _d, _e, _f;
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao cadastrar Kit na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);
@@ -294,9 +297,10 @@ class TrayProducts {
                 resolve({ success: true, message: 'regra de kit inserida com sucesso' });
             })
                 .catch(erro => {
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao criar regras do kit na Tray ${store.tray_adm_user} - Item ${rule.tray_product_parent_id}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                var _a, _b, _c, _d, _e, _f;
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao criar regras do kit na Tray ${store.tray_adm_user} - Item ${rule.tray_product_parent_id}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);
@@ -339,10 +343,11 @@ class TrayProducts {
                 resolve();
             })
                 .catch(erro => {
+                var _a, _b, _c, _d, _e, _f;
                 console.log(erro.response.data, query, trayRules);
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);
@@ -382,9 +387,10 @@ class TrayProducts {
                 resolve({ success: true, message: 'produto excluído com sucesso' });
             })
                 .catch(erro => {
-                if (erro.response.data.causes != undefined) {
-                    console.log(erro.response.data.causes);
-                    reject(`Erro ao excluir o produto na Tray ${store.tray_adm_user} - Item ${trayId}. Motivo da tray: ${JSON.stringify(erro.response.data.causes)}`);
+                var _a, _b, _c, _d, _e, _f;
+                if (((_b = (_a = erro === null || erro === void 0 ? void 0 : erro.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.causes) != undefined) {
+                    console.log((_d = (_c = erro === null || erro === void 0 ? void 0 : erro.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.causes);
+                    reject(`Erro ao excluir o produto na Tray ${store.tray_adm_user} - Item ${trayId}. Motivo da tray: ${JSON.stringify((_f = (_e = erro === null || erro === void 0 ? void 0 : erro.response) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.causes)}`);
                 }
                 else {
                     console.log(erro.response.data);

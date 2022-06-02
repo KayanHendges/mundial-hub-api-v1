@@ -13,6 +13,7 @@ providersRouter.get('/providers/list', ProviderController_1.default.getProviders
 providersRouter.get('/providers/convert-product/luper', ProductController_1.default.ConvertProductsLuper);
 providersRouter.get('/providers/convert-product/roddar', ProductController_1.default.ConvertProductsRoddar);
 providersRouter.get('/providers/convert-product/duncan', ProductController_1.default.ConvertProductsDuncan);
+providersRouter.get('/providers/convert-product/dunlop', ProductController_1.default.ConvertProductsDunlop);
 providersRouter.get('/providers/link/:provider_id', ProviderController_1.default.productsNotLinked);
 providersRouter.get('/providers/link-products', List_1.default.listToLinkProviders);
 providersRouter.post('/providers/link-products', ProviderController_1.default.handleProductsNotLinked);

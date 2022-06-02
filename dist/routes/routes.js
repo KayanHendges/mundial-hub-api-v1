@@ -20,5 +20,5 @@ mainRouter.use(users_1.default);
 mainRouter.use(providers_1.default);
 mainRouter.use(freight_1.default);
 mainRouter.use(test_1.default);
-mainRouter.get('/temp/test', temp_1.default.Temp);
+mainRouter.get('/temp/test', temp_1.default.Temp2);
 exports.default = mainRouter;
