@@ -92,7 +92,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
@@ -180,7 +180,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao editar na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao editar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
@@ -277,7 +277,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao cadastrar Kit na Tray ${store.tray_adm_user} - Item ${product.reference}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao cadastrar na Tray ${store.tray_adm_user} - Item ${product.reference}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
@@ -325,7 +325,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao criar regras do kit na Tray ${store.tray_adm_user} - Item ${rule.tray_product_parent_id}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao criar regras do kit na Tray ${store.tray_adm_user} - Item ${rule.tray_product_parent_id}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
@@ -379,7 +379,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao editar regras do kit na Tray ${store.tray_adm_user} - Item ${rules.tray_product_parent_id}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
@@ -426,7 +426,7 @@ class TrayProducts {
                     console.log(erro?.response?.data?.causes)
                     reject(`Erro ao excluir o produto na Tray ${store.tray_adm_user} - Item ${trayId}. Motivo da tray: ${JSON.stringify(erro?.response?.data?.causes)}`)
                 } else {
-                    console.log(erro.response.data)
+                    console.log(erro?.response?.data)
                     reject(`Erro ao excluir o produto na Tray ${store.tray_adm_user} - Item ${trayId}. Resposta da Tray: ${JSON.stringify(erro.response.data)}`)
                 }
             })
