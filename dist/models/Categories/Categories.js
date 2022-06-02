@@ -52,6 +52,13 @@ class Categories {
         }
         async function postTray(values, store) {
             return new Promise((resolve, reject) => {
+                // service disabled
+                const min = 1000 * 20;
+                const max = 1000 * 40;
+                const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
+                resolve({ success: true, message: 'sucesso ao criar na Tray', id: randomTrayId });
+                return;
+                // just for demonstration
                 const trayCategory = JSON.stringify({
                     Category: {
                         name: values.category_name,
@@ -174,6 +181,13 @@ class Categories {
         }
         async function postTray(values, store) {
             return new Promise((resolve, reject) => {
+                // service disabled
+                const min = 1000 * 20;
+                const max = 1000 * 40;
+                const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
+                resolve({ success: true, message: 'sucesso ao criar na Tray', id: randomTrayId });
+                return;
+                // just for demonstration
                 const parentId = store.store == 668385 ? values.tray_category_parent_id : values.tray_scpneus_category_parent_id;
                 const trayCategory = JSON.stringify({
                     Category: {
@@ -275,6 +289,10 @@ class Categories {
         }
         async function postTray(category, store) {
             return new Promise(resolve => {
+                // service disabled
+                resolve({ success: true, message: 'sucesso ao atualizar na Tray' });
+                return;
+                // just for demonstration
                 const trayCategory = JSON.stringify({
                     Category: {
                         name: category.category_name,
@@ -447,6 +465,10 @@ class Categories {
         }
         async function deleteTray(id, store) {
             return new Promise((resolve, reject) => {
+                // service disabled
+                resolve({ success: true, message: 'sucesso ao deletar na Tray' });
+                return;
+                // just for demonstration
                 const trayId = store.store == 668385 ? id.tray_category_id : id.tray_scpneus_category_id;
                 const query = `${store.api_address}/categories/${trayId}?access_token=${store.access_token}`;
                 Requests_1.default.saveRequest(query);
@@ -519,6 +541,9 @@ class Categories {
     }
     async updateCategoryOrder() {
         return new Promise(async (resolve, reject) => {
+            resolve({ succes: true });
+            return;
+            // just for demonstration
             const MundialCredentials = await OAuth2Tray_1.default.getStoreCredentials(668385);
             const ScPneusCredentials = await OAuth2Tray_1.default.getStoreCredentials(1049898);
             const categories = await getCategories();
@@ -594,6 +619,10 @@ class Categories {
     }
     async updateOrderTray(category, store) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve(true);
+            return;
+            // just for demonstration
             setTimeout(async () => {
                 console.log('update', category.category_name, category.order_list);
                 const query = `${store.api_address}/categories/${category.tray_category_id}?access_token=${store.access_token}`;
@@ -620,6 +649,10 @@ class Categories {
     }
     async updateOrderTrayScPneus(category, store) {
         return new Promise(async (resolve, reject) => {
+            // service disabled
+            resolve(true);
+            return;
+            // just for demonstration
             setTimeout(async () => {
                 console.log('update', category.category_name, category.order_list);
                 const query = `${store.api_address}/categories/${category.tray_scpneus_category_id}?access_token=${store.access_token}`;

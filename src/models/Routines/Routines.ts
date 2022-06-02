@@ -11,9 +11,12 @@ class Routines {
             
 
             console.log("rotinas iniciadas")
-            OAuth2Tray.tokenRoutine()
-            cron.schedule("0 0 * * *", () => Requests.resetCountRequests());
-            cron.schedule("00 03 * * *", () => Categories.updateCategoryOrder());
+
+            // rotinas desabilitadas, projeto apenas para apresentação
+
+            // OAuth2Tray.tokenRoutine()
+            // cron.schedule("0 0 * * *", () => Requests.resetCountRequests());
+            // cron.schedule("00 03 * * *", () => Categories.updateCategoryOrder());
 
         })
     }

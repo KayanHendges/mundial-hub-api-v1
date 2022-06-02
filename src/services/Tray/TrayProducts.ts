@@ -26,6 +26,8 @@ class TrayProducts {
 
             resolve(randomTrayId)
 
+            return
+
             // just for demonstration
 
             await TrayRequestsQueue.newRequest()
@@ -119,6 +121,8 @@ class TrayProducts {
             // service disabled
 
             resolve()
+
+            return
 
             // just for demonstration
 
@@ -228,6 +232,8 @@ class TrayProducts {
             const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min)
 
             resolve(randomTrayId)
+
+            return
 
             // just for demonstration
 
@@ -377,6 +383,8 @@ class TrayProducts {
 
             resolve()
 
+            return
+
             // just for demonstration
 
             await TrayRequestsQueue.newRequest()
@@ -444,6 +452,8 @@ class TrayProducts {
             // service disabled
 
             resolve({success: true, message: 'produto excluído com sucesso'})
+
+            return
 
             // just for demonstration
 

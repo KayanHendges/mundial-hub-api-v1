@@ -14,6 +14,7 @@ class TrayProducts {
             const max = 1000 * 40;
             const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
             resolve(randomTrayId);
+            return;
             // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
@@ -102,6 +103,7 @@ class TrayProducts {
         return new Promise(async (resolve, reject) => {
             // service disabled
             resolve();
+            return;
             // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
@@ -199,6 +201,7 @@ class TrayProducts {
             const max = 1000 * 40;
             const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min);
             resolve(randomTrayId);
+            return;
             // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
@@ -334,6 +337,7 @@ class TrayProducts {
         return new Promise(async (resolve, reject) => {
             // service disabled
             resolve();
+            return;
             // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
@@ -392,6 +396,7 @@ class TrayProducts {
         return new Promise(async (resolve, reject) => {
             // service disabled
             resolve({ success: true, message: 'produto excluído com sucesso' });
+            return;
             // just for demonstration
             await RequestsQueue_1.default.newRequest()
                 .catch(erro => {
