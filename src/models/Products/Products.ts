@@ -6,8 +6,6 @@ import Datetime from "../../services/datetime"
 import OAuth2Tray from "../Auth/OAuth2Tray"
 import Requests from "../Tray/Requests"
 import ConvertCategories from "../Categories/ConvertCategories"
-import Validate from "../../services/Products/Validate"
-import TrayProducts from "../../services/Tray/TrayProducts"
 import Product from "../../services/Products/Product"
 
 interface ProductIds {
@@ -1613,8 +1611,6 @@ class Products {
         const products = await getProducts(reference)
         const productScPneus = await getProductScPneus(reference)
 
-        console.log('aqui foi')
-
         await productLoop(products, 0)
         await postTraySC(productScPneus)
 
@@ -1693,7 +1689,27 @@ class Products {
 
         async function getImages(product: any){
             return new Promise(resolve => {
-                
+
+                const images = {
+                    picture_source_1: 'https://images.tcdn.com.br/img/img_prod/668385/pneu_275_65r18_geolandar_g012_a_t_s_lb_113s_yokohama_15379_1_e389e673fce3dd5314d903d11b60885b.jpg',
+                    picture_source_1_90: 'https://images.tcdn.com.br/img/img_prod/668385/pneu_275_65r18_geolandar_g012_a_t_s_lb_113s_yokohama_15379_1_e389e673fce3dd5314d903d11b60885b.jpg',
+                    picture_source_2: '',
+                    picture_source_2_90: '',
+                    picture_source_3: '',
+                    picture_source_3_90: '',
+                    picture_source_4: '',
+                    picture_source_4_90: '',
+                    picture_source_5: '',
+                    picture_source_5_90: '',
+                    picture_source_6: '',
+                    picture_source_6_90: '' 
+                }
+                resolve(saveImagesDB(product, images))
+
+                return
+
+                // service disabled, fake api to demonstration
+
                 const query = `${MundialCredentials.api_address}/products/${product.tray_product_id}?access_token=${MundialCredentials.access_token}`
                 Requests.saveRequest(query)
 
@@ -1753,6 +1769,12 @@ class Products {
 
         async function postTraySC(product: any): Promise<any>{
             return new Promise(async(resolve, reject) => {
+
+                resolve({ success: true })
+
+                return
+
+                // service disabled, fake tray api to demonstration
 
                 const productObj = {
                     Product: {
@@ -2080,6 +2102,12 @@ class Products {
 
         async function deleteTray(trayId: number, storeCredentials: any): Promise<void>{
             return new Promise(resolve => {
+
+                resolve()
+
+                return
+
+                // service disabled, fake tray api to demonstration
 
                 if(trayId == 0){
                     resolve()
