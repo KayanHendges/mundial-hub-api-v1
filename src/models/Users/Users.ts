@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Response } from "express";
 import Connect from "../../database/Connect";
-import TrayProducts, { IStore } from "../../services/Tray/TrayProducts";
+import { IStore } from "../../services/Tray/TrayProducts";
 import OAuth2Tray from "../Auth/OAuth2Tray";
 
 class Users {
@@ -53,6 +53,19 @@ class Users {
             async function getTrayProductsAmount(storeCredentials: IStore): Promise<number>{
                 return new Promise(async(resolve, reject) => {
                     
+                    // service disabled
+
+                    const min = 1000 * 20
+                    const max = 1000 * 40
+
+                    const randomTrayId = Math.floor(Math.random() * (max - min + 1) + min)
+
+                    resolve(randomTrayId)
+
+                    return
+
+                    // just for demonstration
+
                     const query = `${storeCredentials.api_address}/products/`
 
                     axios.get(query)

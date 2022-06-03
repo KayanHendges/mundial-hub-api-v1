@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import Users from '../../models/Users/Users';
 import Product from '../../services/Products/ProductDataBase'
-import nodemailer from 'nodemailer'
 import fs from 'fs';
 
 type Products = {
