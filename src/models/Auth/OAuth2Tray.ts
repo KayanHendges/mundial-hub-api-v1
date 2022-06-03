@@ -148,9 +148,57 @@ class OAuth2Tray {
             
             const prismaClient: any = {}
 
-            const store = await prismaClient.store.findFirst({
-                where: { trayId: storeId }
-            })
+            // const store = await prismaClient.store.findFirst({
+            //     where: { trayId: storeId }
+            // })
+
+            // fake store to test
+
+            const getStore = storeId => {
+                if(storeId == 668385){
+                    const fakeDate = new Date()
+
+                    const returnStore: Store = {
+                        id: 0,
+                        name: 'mundial pneumaticos',
+                        trayId: 668385,
+                        oAuth2Code: '',
+                        accessToken: '',
+                        refreshToken: '',
+                        apiAddress: 'https://mundialpneumaticos.com.br/web_api/',
+                        link: "https://mundialpneumaticos.com.br/",
+                        expirationAccessToken:  fakeDate,
+                        expirationRefreshToken:  fakeDate,
+                        modified: fakeDate,
+                        tokenActivated: fakeDate,
+                    }
+                    
+                    return returnStore
+                }
+
+                if(storeId == 1049898){
+                    const fakeDate = new Date()
+
+                    const returnStore: Store = {
+                        id: 0,
+                        name: 'santa cruz',
+                        trayId: 1049898,
+                        oAuth2Code: '',
+                        accessToken: '',
+                        refreshToken: '',
+                        apiAddress: 'https://santacruzpneus.com.br/web_api/',
+                        link: "https://santacruzpneus.com.br/",
+                        expirationAccessToken:  fakeDate,
+                        expirationRefreshToken:  fakeDate,
+                        modified: fakeDate,
+                        tokenActivated: fakeDate,
+                    }
+                    
+                    return returnStore
+                }
+            }
+
+            const store = getStore(storeId)
 
             if(!store){
                 throw new Error(`Any store found with ${storeId} id`)
