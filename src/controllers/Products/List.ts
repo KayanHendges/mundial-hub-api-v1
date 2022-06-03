@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import Products from '../../models/Products/Products';
 import List from '../../models/Products/List';
-import { prismaClient } from '../../database/prismaClient';
 import Connect from '../../database/Connect';
 
 export default {
