@@ -1,7 +1,5 @@
 import axios from "axios"
 import { addHours, differenceInMinutes, format, parseISO, startOfYesterday } from "date-fns"
-import Connect from "../../database/Connect"
-import { prismaClient } from "../../database/prismaClient";
 import Requests from "../Tray/Requests"
 
 interface ICredentialsTray {
@@ -38,6 +36,8 @@ interface Store {
 class OAuth2Tray {
 
     async tokenRoutine(){
+
+        const prismaClient: any = {}
 
         const stores = await getStores()
         await expiredTokens(stores)
@@ -115,6 +115,8 @@ class OAuth2Tray {
     async getToken(storeId: any): Promise<any>{
         return new Promise(async(resolve, reject) => {
 
+            const prismaClient: any = {}
+
             const store = await prismaClient.store.findFirst({
                 where: { trayId: storeId }
             })
@@ -144,6 +146,8 @@ class OAuth2Tray {
     async getStoreCredentials(storeId: number): Promise<ICredentialsTray>{
         return new Promise(async(resolve, reject) => {
             
+            const prismaClient: any = {}
+
             const store = await prismaClient.store.findFirst({
                 where: { trayId: storeId }
             })
