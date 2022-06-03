@@ -329,6 +329,8 @@ class TrayProducts {
 
             resolve({ success: true, message: 'regra de kit criada com sucesso' })
 
+            return
+
             // just for demonstration
 
             await TrayRequestsQueue.newRequest()
